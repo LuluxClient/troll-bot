@@ -2,7 +2,7 @@ import { SlashCommandSubcommandBuilder, ChatInputCommandInteraction } from 'disc
 
 export const data = new SlashCommandSubcommandBuilder()
     .setName('add')
-    .setDescription('Add a new troll sound')
+    .setDescription('Add a new trollus sound')
     .addStringOption(option =>
         option.setName('url')
             .setDescription('YouTube URL')

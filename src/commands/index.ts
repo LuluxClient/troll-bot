@@ -1,5 +1,5 @@
-import * as troll from './troll';
+import * as trollus from './trollus';
 
 export {
-    troll
+    trollus
 }; 
