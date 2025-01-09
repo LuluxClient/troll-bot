@@ -5,8 +5,11 @@ import { Config } from '../config';
 
 export class YoutubeService {
     private static instance: YoutubeService;
+    private readonly cookiesPath: string;
 
-    private constructor() {}
+    private constructor() {
+        this.cookiesPath = path.join(process.cwd(), 'cookies.txt');
+    }
 
     public static getInstance(): YoutubeService {
         if (!YoutubeService.instance) {
@@ -33,6 +36,7 @@ export class YoutubeService {
                 noCheckCertificates: true,
                 noWarnings: true,
                 preferFreeFormats: true,
+                cookies: this.cookiesPath,
                 addHeader: [
                     'referer:youtube.com',
                     'user-agent:Mozilla/5.0'
