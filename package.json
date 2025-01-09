@@ -1,0 +1,23 @@
+{
+  "name": "troll-discord-bot",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "ts-node-dev --respawn src/index.ts",
+    "deploy": "ts-node src/deploy-commands.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.11.0",
+    "dotenv": "^16.0.3",
+    "uuid": "^9.0.0",
+    "ytdl-core": "^4.11.4"
+  },
+  "devDependencies": {
+    "@types/node": "^18.19.70",
+    "@types/uuid": "^9.0.1",
+    "ts-node": "^10.9.1",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.7.3"
+  }
+}
