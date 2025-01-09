@@ -14,7 +14,8 @@ dist/
 data/
 
 # Downloaded sounds
-sounds/
+assets/sounds/*
+!assets/sounds/.gitkeep
 
 # Logs
 *.log

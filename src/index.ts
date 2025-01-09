@@ -16,19 +16,36 @@ client.once(Events.ClientReady, () => {
 });
 
 client.on(Events.InteractionCreate, async interaction => {
-    if (!interaction.isChatInputCommand()) return;
-
-    const command = (commandModules as Record<string, any>)[interaction.commandName];
-    if (!command) return;
-
     try {
+        if (interaction.isAutocomplete()) {
+            const command = (commandModules as Record<string, any>)[interaction.commandName];
+            if (command?.handleAutocomplete) {
+                await command.handleAutocomplete(interaction);
+            }
+            return;
+        }
+
+        if (!interaction.isChatInputCommand()) return;
+
+        const command = (commandModules as Record<string, any>)[interaction.commandName];
+        if (!command) return;
+
         await command.execute(interaction);
     } catch (error) {
         console.error(error);
-        await interaction.reply({
-            content: 'There was an error executing this command!',
-            ephemeral: true
-        });
+        if (interaction.isChatInputCommand()) {
+            if (interaction.replied || interaction.deferred) {
+                await interaction.followUp({
+                    content: 'There was an error executing this command!',
+                    ephemeral: true
+                });
+            } else {
+                await interaction.reply({
+                    content: 'There was an error executing this command!',
+                    ephemeral: true
+                });
+            }
+        }
     }
 });
 

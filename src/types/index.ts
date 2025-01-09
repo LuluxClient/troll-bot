@@ -4,7 +4,6 @@ export interface Sound {
     filename: string;
     addedBy: string;
     addedAt: string;
-    volume: number;
 }
 
 export interface DatabaseSchema {

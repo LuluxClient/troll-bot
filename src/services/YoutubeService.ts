@@ -1,12 +1,10 @@
-import ytdl, { downloadOptions } from 'ytdl-core';
+import youtubeDl from 'youtube-dl-exec';
 import fs from 'fs/promises';
-import fsSync from 'fs';
 import path from 'path';
 import { Config } from '../config';
 
 export class YoutubeService {
     private static instance: YoutubeService;
-    private readonly cookiesPath: string = './cookies.txt';
 
     private constructor() {}
 
@@ -22,37 +20,45 @@ export class YoutubeService {
         const outputPath = path.join(Config.soundsPath, `${sanitizedTitle}.mp3`);
 
         try {
-            const cookies = await this.loadCookies();
-            
+            console.log(`[Download] Starting download for "${title}" from ${url}`);
             await fs.mkdir(Config.soundsPath, { recursive: true });
-            
-            return new Promise((resolve, reject) => {
-                const options: downloadOptions = {
-                    filter: 'audioonly',
-                    quality: 'highestaudio',
-                };
 
-                if (cookies) {
-                    (options as any).cookies = cookies;
-                }
-
-                ytdl(url, options)
-                    .pipe(fsSync.createWriteStream(outputPath))
-                    .on('finish', () => resolve(outputPath))
-                    .on('error', reject);
+            console.log('[Download] Executing youtube-dl...');
+            await youtubeDl(url, {
+                extractAudio: true,
+                audioFormat: 'mp3',
+                audioQuality: 0,
+                output: outputPath,
+                noCheckCertificates: true,
+                noWarnings: true,
+                preferFreeFormats: true,
+                addHeader: [
+                    'referer:youtube.com',
+                    'user-agent:Mozilla/5.0'
+                ]
             });
-        } catch (error) {
-            console.error('Failed to download sound:', error);
-            throw error;
-        }
-    }
 
-    private async loadCookies(): Promise<string> {
-        try {
-            return await fs.readFile(this.cookiesPath, 'utf-8');
+            // Verify file exists and has content
+            const stats = await fs.stat(outputPath);
+            console.log(`[Download] Final file size: ${(stats.size / 1024 / 1024).toFixed(2)} MB`);
+
+            if (stats.size > 0) {
+                console.log('[Download] Download completed successfully');
+                return outputPath;
+            } else {
+                console.error('[Download] File is empty, cleaning up...');
+                await fs.unlink(outputPath);
+                throw new Error('Downloaded file is empty');
+            }
         } catch (error) {
-            console.warn('No cookies file found, downloading without authentication');
-            return '';
+            console.error('[Download] Fatal error:', error);
+            try {
+                console.log('[Download] Cleaning up failed download...');
+                await fs.unlink(outputPath).catch(() => {
+                    console.log('[Download] No file to clean up');
+                });
+            } catch {}
+            throw error;
         }
     }
 
