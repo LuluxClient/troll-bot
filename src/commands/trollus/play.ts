@@ -13,11 +13,10 @@ import {
     AudioPlayerStatus
 } from '@discordjs/voice';
 import { JsonDatabase } from '../../database/JsonDatabase';
-import path from 'path';
-import { Config } from '../../config';
+import { isUserAllowed } from '../../utils/permissions';
 
 export const data = new SlashCommandSubcommandBuilder()
-    .setName('play')
+    .setName('playus')
     .setDescription('Play a trollus sound')
     .addStringOption(option =>
         option.setName('name')
@@ -27,9 +26,11 @@ export const data = new SlashCommandSubcommandBuilder()
     );
 
 export async function autocomplete(interaction: AutocompleteInteraction) {
+    if (!interaction.guildId) return;
+
     const focusedValue = interaction.options.getFocused().toLowerCase();
     const db = await JsonDatabase.getInstance();
-    const sounds = await db.getAllSounds();
+    const sounds = await db.getAllSounds(interaction.guildId);
 
     const filtered = sounds
         .filter(sound => sound.title.toLowerCase().includes(focusedValue))
@@ -43,7 +44,20 @@ export async function autocomplete(interaction: AutocompleteInteraction) {
 }
 
 export async function execute(interaction: ChatInputCommandInteraction) {
+    console.log(`[DEBUG] Play command started in guild: ${interaction.guildId}`);
+    
+    if (!interaction.guildId) {
+        console.log('[DEBUG] No guild ID found');
+        await interaction.reply({ content: 'This command must be used in a server.', ephemeral: true });
+        return;
+    }
+
     await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
+
+    if (!await isUserAllowed(interaction)) {
+        await interaction.editReply('You do not have permission to use this command.');
+        return;
+    }
 
     if (!(interaction.member instanceof GuildMember)) {
         await interaction.editReply('Command must be used in a server.');
@@ -58,7 +72,10 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
     try {
         const db = await JsonDatabase.getInstance();
-        const sounds = await db.getAllSounds();
+        console.log(`[DEBUG] Getting sounds for guild: ${interaction.guildId}`);
+        const sounds = await db.getAllSounds(interaction.guildId);
+        console.log(`[DEBUG] Found ${sounds.length} sounds`);
+        
         const soundName = interaction.options.getString('name', true);
         
         const sound = sounds.find(s => s.title.toLowerCase() === soundName.toLowerCase());
@@ -69,7 +86,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
         const connection = joinVoiceChannel({
             channelId: voiceChannel.id,
-            guildId: interaction.guildId!,
+            guildId: interaction.guildId,
             adapterCreator: interaction.guild!.voiceAdapterCreator,
         });
 
@@ -78,7 +95,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
             inlineVolume: true
         });
 
-        const globalVolume = db.getGlobalVolume();
+        const globalVolume = db.getGlobalVolume(interaction.guildId);
         resource.volume?.setVolume(globalVolume);
         
         connection.subscribe(player);
@@ -96,7 +113,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         });
 
     } catch (error) {
-        console.error('Failed to play sound:', error);
+        console.error('[DEBUG] Play command error:', error);
         await interaction.editReply('Failed to play sound. Please try again later.');
     }
 } 

@@ -10,8 +10,12 @@ export async function isUserAllowed(interaction: ChatInputCommandInteraction): P
         return true;
     }
 
+    if (!interaction.guildId) {
+        return false;
+    }
+
     // Check if user is in database allowed users
     const db = await JsonDatabase.getInstance();
-    const allowedUsers = db.getAllowedUsers();
+    const allowedUsers = db.getAllowedUsers(interaction.guildId);
     return allowedUsers.includes(userId);
 } 

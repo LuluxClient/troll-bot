@@ -18,6 +18,7 @@ client.once(Events.ClientReady, () => {
 client.on(Events.InteractionCreate, async interaction => {
     try {
         if (interaction.isAutocomplete()) {
+            console.log(`[DEBUG] Autocomplete interaction received for command: ${interaction.commandName}`);
             const command = (commandModules as Record<string, any>)[interaction.commandName];
             if (command?.handleAutocomplete) {
                 await command.handleAutocomplete(interaction);
@@ -27,12 +28,16 @@ client.on(Events.InteractionCreate, async interaction => {
 
         if (!interaction.isChatInputCommand()) return;
 
+        console.log(`[DEBUG] Command interaction received: ${interaction.commandName} in guild: ${interaction.guildId}`);
         const command = (commandModules as Record<string, any>)[interaction.commandName];
-        if (!command) return;
+        if (!command) {
+            console.log(`[DEBUG] Command not found: ${interaction.commandName}`);
+            return;
+        }
 
         await command.execute(interaction);
     } catch (error) {
-        console.error(error);
+        console.error('[DEBUG] Error executing command:', error);
         if (interaction.isChatInputCommand()) {
             if (interaction.replied || interaction.deferred) {
                 await interaction.followUp({

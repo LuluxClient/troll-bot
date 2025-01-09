@@ -1,9 +1,9 @@
-import { SlashCommandSubcommandBuilder, ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
+import { SlashCommandSubcommandBuilder, ChatInputCommandInteraction, EmbedBuilder, MessageFlags } from 'discord.js';
 import { JsonDatabase } from '../../database/JsonDatabase';
 import { Config } from '../../config';
 
 export const data = new SlashCommandSubcommandBuilder()
-    .setName('list')
+    .setName('listus')
     .setDescription('List all trollus sounds')
     .addIntegerOption(option =>
         option.setName('page')
@@ -12,14 +12,19 @@ export const data = new SlashCommandSubcommandBuilder()
     );
 
 export async function execute(interaction: ChatInputCommandInteraction) {
-    await interaction.deferReply({ ephemeral: true });
+    if (!interaction.guildId) {
+        await interaction.reply({ content: 'This command must be used in a server.', ephemeral: true });
+        return;
+    }
+
+    await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
     
     const page = interaction.options.getInteger('page') || 1;
     const db = await JsonDatabase.getInstance();
 
     try {
-        const sounds = await db.getSounds(page);
-        const totalSounds = await db.getTotalSounds();
+        const sounds = await db.getSounds(interaction.guildId, page);
+        const totalSounds = await db.getTotalSounds(interaction.guildId);
         const totalPages = Math.ceil(totalSounds / Config.pagination.itemsPerPage);
 
         if (sounds.length === 0) {

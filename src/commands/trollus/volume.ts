@@ -1,9 +1,10 @@
 import { SlashCommandSubcommandBuilder, ChatInputCommandInteraction, MessageFlags } from 'discord.js';
 import { JsonDatabase } from '../../database/JsonDatabase';
 import { Config } from '../../config';
+import { isUserAllowed } from '../../utils/permissions';
 
 export const data = new SlashCommandSubcommandBuilder()
-    .setName('volume')
+    .setName('volumeus')
     .setDescription('Set the global volume for all sounds')
     .addNumberOption(option =>
         option.setName('volume')
@@ -14,13 +15,23 @@ export const data = new SlashCommandSubcommandBuilder()
     );
 
 export async function execute(interaction: ChatInputCommandInteraction) {
+    if (!interaction.guildId) {
+        await interaction.reply({ content: 'This command must be used in a server.', ephemeral: true });
+        return;
+    }
+
     await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
+
+    if (!await isUserAllowed(interaction)) {
+        await interaction.editReply('You do not have permission to use this command.');
+        return;
+    }
     
     const volume = interaction.options.getNumber('volume', true);
     const db = await JsonDatabase.getInstance();
 
     try {
-        await db.updateGlobalVolume(volume);
+        await db.updateGlobalVolume(interaction.guildId, volume);
         await interaction.editReply(`Global volume updated to ${volume}x`);
     } catch (error) {
         console.error('Failed to update volume:', error);

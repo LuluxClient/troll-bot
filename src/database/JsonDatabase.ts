@@ -11,12 +11,20 @@ export class JsonDatabase {
     private constructor() {
         this.dbPath = Config.database.path;
         this.data = {
-            sounds: [],
-            allowedUsers: [],
-            settings: {
-                defaultVolume: Config.defaultVolume
-            }
+            servers: {}
         };
+    }
+
+    private initServerData(guildId: string): void {
+        if (!this.data.servers[guildId]) {
+            this.data.servers[guildId] = {
+                sounds: [],
+                allowedUsers: [],
+                settings: {
+                    defaultVolume: Config.defaultVolume
+                }
+            };
+        }
     }
 
     public static async getInstance(): Promise<JsonDatabase> {
@@ -59,62 +67,70 @@ export class JsonDatabase {
         }
     }
 
-    public async addSound(sound: Sound): Promise<void> {
-        console.log('[Database] Current sounds:', this.data.sounds);
-        this.data.sounds.push(sound);
-        console.log('[Database] After adding sound:', this.data.sounds);
+    public async addSound(guildId: string, sound: Sound): Promise<void> {
+        this.initServerData(guildId);
+        console.log(`[Database] Adding sound for server ${guildId}`);
+        this.data.servers[guildId].sounds.push(sound);
         await this.save();
-        console.log('[Database] Save completed');
     }
 
-    public async removeSound(id: string): Promise<boolean> {
-        const initialLength = this.data.sounds.length;
-        this.data.sounds = this.data.sounds.filter(sound => sound.id !== id);
+    public async removeSound(guildId: string, id: string): Promise<boolean> {
+        this.initServerData(guildId);
+        const initialLength = this.data.servers[guildId].sounds.length;
+        this.data.servers[guildId].sounds = this.data.servers[guildId].sounds.filter(sound => sound.id !== id);
         await this.save();
-        return initialLength !== this.data.sounds.length;
+        return initialLength !== this.data.servers[guildId].sounds.length;
     }
 
-    public async getSounds(page: number): Promise<Sound[]> {
+    public async getSounds(guildId: string, page: number): Promise<Sound[]> {
+        this.initServerData(guildId);
         const start = (page - 1) * Config.pagination.itemsPerPage;
-        return this.data.sounds.slice(start, start + Config.pagination.itemsPerPage);
+        return this.data.servers[guildId].sounds.slice(start, start + Config.pagination.itemsPerPage);
     }
 
-    public async getAllSounds(): Promise<Sound[]> {
-        return this.data.sounds;
+    public async getAllSounds(guildId: string): Promise<Sound[]> {
+        this.initServerData(guildId);
+        return this.data.servers[guildId].sounds;
     }
 
-    public async getTotalSounds(): Promise<number> {
-        return this.data.sounds.length;
+    public async getTotalSounds(guildId: string): Promise<number> {
+        this.initServerData(guildId);
+        return this.data.servers[guildId].sounds.length;
     }
 
-    public async addAllowedUser(userId: string): Promise<void> {
-        if (!this.data.allowedUsers.includes(userId)) {
-            this.data.allowedUsers.push(userId);
+    public async addAllowedUser(guildId: string, userId: string): Promise<void> {
+        this.initServerData(guildId);
+        if (!this.data.servers[guildId].allowedUsers.includes(userId)) {
+            this.data.servers[guildId].allowedUsers.push(userId);
             await this.save();
         }
     }
 
-    public async removeAllowedUser(userId: string): Promise<void> {
-        this.data.allowedUsers = this.data.allowedUsers.filter(id => id !== userId);
+    public async removeAllowedUser(guildId: string, userId: string): Promise<void> {
+        this.initServerData(guildId);
+        this.data.servers[guildId].allowedUsers = this.data.servers[guildId].allowedUsers.filter(id => id !== userId);
         await this.save();
     }
 
-    public async updateGlobalVolume(volume: number): Promise<void> {
-        this.data.settings.defaultVolume = volume;
+    public async updateGlobalVolume(guildId: string, volume: number): Promise<void> {
+        this.initServerData(guildId);
+        this.data.servers[guildId].settings.defaultVolume = volume;
         await this.save();
     }
 
-    public getGlobalVolume(): number {
-        return this.data.settings.defaultVolume;
+    public getGlobalVolume(guildId: string): number {
+        this.initServerData(guildId);
+        return this.data.servers[guildId].settings.defaultVolume;
     }
 
-    public getAllowedUsers(): string[] {
-        return this.data.allowedUsers;
+    public getAllowedUsers(guildId: string): string[] {
+        this.initServerData(guildId);
+        return this.data.servers[guildId].allowedUsers;
     }
 
-    private async getTotalStorageSize(): Promise<number> {
+    private async getTotalStorageSize(guildId: string): Promise<number> {
         let totalSize = 0;
-        for (const sound of this.data.sounds) {
+        for (const sound of this.data.servers[guildId].sounds) {
             try {
                 const stats = await fs.stat(sound.filename);
                 totalSize += stats.size;
@@ -125,10 +141,12 @@ export class JsonDatabase {
         return totalSize;
     }
 
-    public async canAddSound(fileSize: number): Promise<{ can: boolean; reason?: string }> {
-        // Check sound count limit
-        if (this.data.sounds.length >= Config.limits.maxSoundCount) {
-            return { can: false, reason: `Maximum number of sounds (${Config.limits.maxSoundCount}) reached.` };
+    public async canAddSound(guildId: string, fileSize: number): Promise<{ can: boolean; reason?: string }> {
+        this.initServerData(guildId);
+        const serverSounds = this.data.servers[guildId].sounds;
+
+        if (serverSounds.length >= Config.limits.maxSoundCount) {
+            return { can: false, reason: `Maximum number of sounds (${Config.limits.maxSoundCount}) reached for this server.` };
         }
 
         // Check individual file size limit
@@ -140,7 +158,7 @@ export class JsonDatabase {
         }
 
         // Check total storage limit
-        const currentStorage = await this.getTotalStorageSize();
+        const currentStorage = await this.getTotalStorageSize(guildId);
         if (currentStorage + fileSize > Config.limits.maxTotalStorage) {
             return { 
                 can: false, 

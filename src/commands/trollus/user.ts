@@ -1,8 +1,8 @@
-import { SlashCommandSubcommandBuilder, ChatInputCommandInteraction } from 'discord.js';
+import { SlashCommandSubcommandBuilder, ChatInputCommandInteraction, MessageFlags } from 'discord.js';
 import { JsonDatabase } from '../../database/JsonDatabase';
 
 export const data = new SlashCommandSubcommandBuilder()
-    .setName('user')
+    .setName('userus')
     .setDescription('Manage allowed users')
     .addStringOption(option =>
         option.setName('action')
@@ -20,7 +20,12 @@ export const data = new SlashCommandSubcommandBuilder()
     );
 
 export async function execute(interaction: ChatInputCommandInteraction) {
-    await interaction.deferReply({ ephemeral: true });
+    if (!interaction.guildId) {
+        await interaction.reply({ content: 'This command must be used in a server.', ephemeral: true });
+        return;
+    }
+
+    await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
     
     const action = interaction.options.getString('action', true);
     const user = interaction.options.getUser('user', true);
@@ -28,10 +33,10 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
     try {
         if (action === 'add') {
-            await db.addAllowedUser(user.id);
+            await db.addAllowedUser(interaction.guildId, user.id);
             await interaction.editReply(`User ${user.tag} has been added to allowed users.`);
         } else {
-            await db.removeAllowedUser(user.id);
+            await db.removeAllowedUser(interaction.guildId, user.id);
             await interaction.editReply(`User ${user.tag} has been removed from allowed users.`);
         }
     } catch (error) {

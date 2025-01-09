@@ -1,4 +1,4 @@
-import * as trollus from './trollus';
+import { trollus } from './trollus';
 
 export {
     trollus

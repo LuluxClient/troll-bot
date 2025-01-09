@@ -5,9 +5,10 @@ import {
     AutocompleteInteraction
 } from 'discord.js';
 import { JsonDatabase } from '../../database/JsonDatabase';
+import { isUserAllowed } from '../../utils/permissions';
 
 export const data = new SlashCommandSubcommandBuilder()
-    .setName('remove')
+    .setName('removus')
     .setDescription('Remove a trollus sound')
     .addStringOption(option =>
         option.setName('name')
@@ -17,9 +18,11 @@ export const data = new SlashCommandSubcommandBuilder()
     );
 
 export async function autocomplete(interaction: AutocompleteInteraction) {
+    if (!interaction.guildId) return;
+
     const focusedValue = interaction.options.getFocused().toLowerCase();
     const db = await JsonDatabase.getInstance();
-    const sounds = await db.getAllSounds();
+    const sounds = await db.getAllSounds(interaction.guildId);
 
     const filtered = sounds
         .filter(sound => sound.title.toLowerCase().includes(focusedValue))
@@ -33,11 +36,21 @@ export async function autocomplete(interaction: AutocompleteInteraction) {
 }
 
 export async function execute(interaction: ChatInputCommandInteraction) {
+    if (!interaction.guildId) {
+        await interaction.reply({ content: 'This command must be used in a server.', ephemeral: true });
+        return;
+    }
+
     await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
+
+    if (!await isUserAllowed(interaction)) {
+        await interaction.editReply('You do not have permission to use this command.');
+        return;
+    }
     
     const db = await JsonDatabase.getInstance();
     const soundName = interaction.options.getString('name', true);
-    const sounds = await db.getAllSounds();
+    const sounds = await db.getAllSounds(interaction.guildId);
     
     const sound = sounds.find(s => s.title.toLowerCase() === soundName.toLowerCase());
     if (!sound) {
@@ -46,7 +59,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     }
 
     try {
-        await db.removeSound(sound.id);
+        await db.removeSound(interaction.guildId, sound.id);
         await interaction.editReply(`Sound "${sound.title}" has been removed successfully!`);
     } catch (error) {
         console.error('Failed to remove sound:', error);

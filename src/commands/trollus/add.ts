@@ -7,7 +7,7 @@ import fs from 'fs/promises';
 import { isUserAllowed } from '../../utils/permissions';
 
 export const data = new SlashCommandSubcommandBuilder()
-    .setName('add')
+    .setName('addus')
     .setDescription('Add a new trollus sound')
     .addStringOption(option =>
         option.setName('url')
@@ -21,6 +21,11 @@ export const data = new SlashCommandSubcommandBuilder()
     );
 
 export async function execute(interaction: ChatInputCommandInteraction) {
+    if (!interaction.guildId) {
+        await interaction.reply({ content: 'This command must be used in a server.', ephemeral: true });
+        return;
+    }
+
     await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
 
     // Check permissions first
@@ -55,9 +60,9 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         }
 
         const stats = await fs.stat(filename);
-        const canAdd = await db.canAddSound(stats.size);
+        const canAdd = await db.canAddSound(interaction.guildId, stats.size);
         if (!canAdd.can) {
-            await fs.unlink(filename); // Clean up the downloaded file
+            await fs.unlink(filename);
             await interaction.editReply(canAdd.reason || 'Cannot add sound due to storage limits.');
             return;
         }
@@ -72,7 +77,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         };
 
         console.log('[Database] Adding sound to database:', sound);
-        await db.addSound(sound);
+        await db.addSound(interaction.guildId, sound);
         console.log('[Database] Sound added successfully');
 
         await interaction.editReply(`Sound "${title}" has been added successfully!`);

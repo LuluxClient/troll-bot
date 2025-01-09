@@ -21,7 +21,13 @@ export const Config = {
         maxSoundSize: 100 * 1024 * 1024, // 100MB in bytes
         maxSoundCount: 100,
         maxTotalStorage: 20 * 1024 * 1024 * 1024 // 20GB in bytes
-    }
+    },
+    botPermissions: [
+        'SendMessages',
+        'Connect',
+        'Speak',
+        'UseVAD'
+    ] as const
 } as const;
 
 export type ConfigType = typeof Config; 

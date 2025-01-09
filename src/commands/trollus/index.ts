@@ -7,43 +7,47 @@ import * as stop from './stop';
 import * as volume from './volume';
 import * as play from './play';
 
-export const data = new SlashCommandBuilder()
-    .setName('trollus')
-    .setDescription('Trollus commands')
-    .addSubcommand(add.data)
-    .addSubcommand(user.data)
-    .addSubcommand(list.data)
-    .addSubcommand(remove.data)
-    .addSubcommand(stop.data)
-    .addSubcommand(volume.data)
-    .addSubcommand(play.data);
+export const trollus = {
+    data: new SlashCommandBuilder()
+        .setName('trollus')
+        .setDescription('Trollus commands')
+        .addSubcommand(add.data)
+        .addSubcommand(user.data)
+        .addSubcommand(list.data)
+        .addSubcommand(remove.data)
+        .addSubcommand(stop.data)
+        .addSubcommand(volume.data)
+        .addSubcommand(play.data),
 
-export async function execute(interaction: ChatInputCommandInteraction) {
-    const subcommand = interaction.options.getSubcommand();
-    
-    switch (subcommand) {
-        case 'add':
-            return add.execute(interaction);
-        case 'user':
-            return user.execute(interaction);
-        case 'list':
-            return list.execute(interaction);
-        case 'remove':
-            return remove.execute(interaction);
-        case 'stop':
-            return stop.execute(interaction);
-        case 'volume':
-            return volume.execute(interaction);
-        case 'play':
-            return play.execute(interaction);
-    }
-}
+    async execute(interaction: ChatInputCommandInteraction) {
+        const subcommand = interaction.options.getSubcommand();
+        
+        switch (subcommand) {
+            case 'addus':
+                return add.execute(interaction);
+            case 'userus':
+                return user.execute(interaction);
+            case 'listus':
+                return list.execute(interaction);
+            case 'removus':
+                return remove.execute(interaction);
+            case 'stopus':
+                return stop.execute(interaction);
+            case 'volumeus':
+                return volume.execute(interaction);
+            case 'playus':
+                return play.execute(interaction);
+        }
+    },
 
-export async function handleAutocomplete(interaction: AutocompleteInteraction) {
-    const subcommand = interaction.options.getSubcommand();
-    
-    switch (subcommand) {
-        case 'play':
-            return play.autocomplete(interaction);
+    async handleAutocomplete(interaction: AutocompleteInteraction) {
+        const subcommand = interaction.options.getSubcommand();
+        
+        switch (subcommand) {
+            case 'playus':
+                return play.autocomplete(interaction);
+            case 'removus':
+                return remove.autocomplete(interaction);
+        }
     }
-} 
+}; 

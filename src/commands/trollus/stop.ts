@@ -2,7 +2,7 @@ import { SlashCommandSubcommandBuilder, ChatInputCommandInteraction } from 'disc
 import { getVoiceConnection } from '@discordjs/voice';
 
 export const data = new SlashCommandSubcommandBuilder()
-    .setName('stop')
+    .setName('stopus')
     .setDescription('Stop current sound and disconnect');
 
 export async function execute(interaction: ChatInputCommandInteraction) {

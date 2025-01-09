@@ -6,10 +6,16 @@ export interface Sound {
     addedAt: string;
 }
 
-export interface DatabaseSchema {
+export interface ServerData {
     sounds: Sound[];
     allowedUsers: string[];
     settings: {
         defaultVolume: number;
+    };
+}
+
+export interface DatabaseSchema {
+    servers: {
+        [guildId: string]: ServerData;
     };
 } 
