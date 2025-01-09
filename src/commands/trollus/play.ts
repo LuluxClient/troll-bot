@@ -4,7 +4,8 @@ import {
     GuildMember,
     ChannelType,
     MessageFlags,
-    AutocompleteInteraction
+    AutocompleteInteraction,
+    VoiceChannel
 } from 'discord.js';
 import { 
     joinVoiceChannel, 
@@ -23,6 +24,11 @@ export const data = new SlashCommandSubcommandBuilder()
             .setDescription('Sound name')
             .setRequired(true)
             .setAutocomplete(true)
+    )
+    .addChannelOption(option =>
+        option.setName('channel')
+            .setDescription('Voice channel to play in (optional)')
+            .addChannelTypes(ChannelType.GuildVoice)
     );
 
 export async function autocomplete(interaction: AutocompleteInteraction) {
@@ -64,9 +70,13 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         return;
     }
 
-    const voiceChannel = interaction.member.voice.channel;
+    const specifiedChannel = interaction.options.getChannel('channel') as VoiceChannel | null;
+    const memberVoiceChannel = (interaction.member as GuildMember).voice.channel;
+    
+    const voiceChannel = specifiedChannel || memberVoiceChannel;
+
     if (!voiceChannel || voiceChannel.type !== ChannelType.GuildVoice) {
-        await interaction.editReply('You must be in a voice channel to use this command!');
+        await interaction.editReply('Please either join a voice channel or specify a voice channel to play in!');
         return;
     }
 
