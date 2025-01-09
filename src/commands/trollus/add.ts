@@ -49,7 +49,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         await interaction.editReply('Downloading sound... This might take a moment.');
         
         console.log('[Database] Starting download process...');
-        const filename = await youtube.downloadSound(url, title);
+        const filename = await youtube.downloadSound(url, title, interaction.guildId);
         console.log(`[Database] Download completed: ${filename}`);
 
         const fileExists = await fs.access(filename).then(() => true).catch(() => false);

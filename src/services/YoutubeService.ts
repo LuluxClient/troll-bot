@@ -15,20 +15,21 @@ export class YoutubeService {
         return YoutubeService.instance;
     }
 
-    public async downloadSound(url: string, title: string): Promise<string> {
-        const sanitizedTitle = this.sanitizeTitle(title);
-        const outputPath = path.join(Config.soundsPath, `${sanitizedTitle}.mp3`);
+    public async downloadSound(url: string, title: string, guildId: string): Promise<string> {
+        const serverSoundsPath = path.join(Config.soundsPath, guildId);
+        await fs.mkdir(serverSoundsPath, { recursive: true });
+
+        const safeTitle = title.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+        const filename = path.join(serverSoundsPath, `${safeTitle}.mp3`);
 
         try {
             console.log(`[Download] Starting download for "${title}" from ${url}`);
-            await fs.mkdir(Config.soundsPath, { recursive: true });
-
-            console.log('[Download] Executing youtube-dl...');
+            
             await youtubeDl(url, {
                 extractAudio: true,
                 audioFormat: 'mp3',
                 audioQuality: 0,
-                output: outputPath,
+                output: filename,
                 noCheckCertificates: true,
                 noWarnings: true,
                 preferFreeFormats: true,
@@ -38,34 +39,25 @@ export class YoutubeService {
                 ]
             });
 
-            // Verify file exists and has content
-            const stats = await fs.stat(outputPath);
+            const stats = await fs.stat(filename);
             console.log(`[Download] Final file size: ${(stats.size / 1024 / 1024).toFixed(2)} MB`);
 
             if (stats.size > 0) {
                 console.log('[Download] Download completed successfully');
-                return outputPath;
+                return filename;
             } else {
                 console.error('[Download] File is empty, cleaning up...');
-                await fs.unlink(outputPath);
+                await fs.unlink(filename);
                 throw new Error('Downloaded file is empty');
             }
         } catch (error) {
             console.error('[Download] Fatal error:', error);
             try {
-                console.log('[Download] Cleaning up failed download...');
-                await fs.unlink(outputPath).catch(() => {
+                await fs.unlink(filename).catch(() => {
                     console.log('[Download] No file to clean up');
                 });
             } catch {}
             throw error;
         }
-    }
-
-    private sanitizeTitle(title: string): string {
-        return title
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, '-')
-            .replace(/^-+|-+$/g, '');
     }
 } 

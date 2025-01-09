@@ -9,7 +9,7 @@ export const Config = {
         '0'
     ],
     defaultVolume: 1.0,
-    maxVolume: 2.0,
+    maxVolume: 5.0,
     soundsPath: './assets/sounds',
     database: {
         path: './data/database.json'
