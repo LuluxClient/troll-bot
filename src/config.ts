@@ -3,7 +3,8 @@ export const Config = {
         '252454259252002826',
         '295515087731556362',
         '263423845040521233',
-        '273898521344606208'
+        '273898521344606208',
+        '1060245407663390771'
     ] as string[],
     allowedRoles: [ // Les rôles qui peuvent utiliser le bot (pas implémenté mdr)
         '0'
