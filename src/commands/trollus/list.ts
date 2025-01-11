@@ -19,34 +19,35 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
     await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
     
-    const page = interaction.options.getInteger('page') || 1;
-    const db = await JsonDatabase.getInstance();
-
     try {
-        const allSounds = await db.getAllSounds(interaction.guildId);
+        const db = await JsonDatabase.getInstance();
+        const sounds = await db.getAllSounds(interaction.guildId);
         
-        if (allSounds.length === 0) {
+        if (!sounds || sounds.length === 0) {
             await interaction.editReply('Aucun son trouvé pour ce serveur.');
             return;
         }
 
-        const startIndex = (page - 1) * Config.pagination.itemsPerPage;
-        const endIndex = startIndex + Config.pagination.itemsPerPage;
-        const sounds = allSounds.slice(startIndex, endIndex);
-        const totalPages = Math.ceil(allSounds.length / Config.pagination.itemsPerPage);
+        const page = interaction.options.getInteger('page') || 1;
+        const totalPages = Math.ceil(sounds.length / Config.pagination.itemsPerPage);
 
         if (page > totalPages) {
-            await interaction.editReply(`Il n'y a que ${totalPages} page(s) de sons disponibles.`);
+            await interaction.editReply(`Il n'y a que ${totalPages} page(s) disponible(s).`);
             return;
         }
 
+        const startIndex = (page - 1) * Config.pagination.itemsPerPage;
+        const endIndex = Math.min(startIndex + Config.pagination.itemsPerPage, sounds.length);
+        const pageItems = sounds.slice(startIndex, endIndex);
+
         const embed = new EmbedBuilder()
+            .setColor('#FF69B4')
             .setTitle('🎵 Sons Trollus Disponibles')
-            .setDescription(sounds.map((sound, i) => 
+            .setDescription(pageItems.map((sound, i) => 
                 `${startIndex + i + 1}. **${sound.title}**`
             ).join('\n'))
             .setFooter({ 
-                text: `Page ${page}/${totalPages} • Total: ${allSounds.length} sons` 
+                text: `Page ${page}/${totalPages} • Total: ${sounds.length} sons` 
             });
 
         await interaction.editReply({ embeds: [embed] });
