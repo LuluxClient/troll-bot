@@ -151,20 +151,12 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         }
 
         await sleep(Config.tourduparcus.finalDelay);
+        
+        connection.destroy();
+        
         await targetUser.voice.setChannel(targetVoiceChannel);
-
-        connection.destroy();
-        connection = joinVoiceChannel({
-            channelId: targetVoiceChannel.id,
-            guildId: interaction.guildId,
-            adapterCreator: interaction.guild!.voiceAdapterCreator,
-        });
-        connection.subscribe(player);
         
-        await sleep(1000);
-        connection.destroy();
         movingUsers.delete(userKey);
-        
         await interaction.editReply(`Tour du parc terminé pour ${targetUser.displayName}!`);
 
     } catch (error) {
