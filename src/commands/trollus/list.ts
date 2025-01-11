@@ -4,16 +4,16 @@ import { Config } from '../../config';
 
 export const data = new SlashCommandSubcommandBuilder()
     .setName('listus')
-    .setDescription('List all trollus sounds')
+    .setDescription('Liste tous les sons disponibles')
     .addIntegerOption(option =>
         option.setName('page')
-            .setDescription('Page number')
+            .setDescription('Numéro de la page')
             .setMinValue(1)
     );
 
 export async function execute(interaction: ChatInputCommandInteraction) {
     if (!interaction.guildId) {
-        await interaction.reply({ content: 'This command must be used in a server.', ephemeral: true });
+        await interaction.reply({ content: 'Cette commande doit être utilisée dans un serveur.', ephemeral: true });
         return;
     }
 
@@ -23,25 +23,35 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     const db = await JsonDatabase.getInstance();
 
     try {
-        const sounds = await db.getSounds(interaction.guildId, page);
-        const totalSounds = await db.getTotalSounds(interaction.guildId);
-        const totalPages = Math.ceil(totalSounds / Config.pagination.itemsPerPage);
+        const allSounds = await db.getAllSounds(interaction.guildId);
+        
+        if (allSounds.length === 0) {
+            await interaction.editReply('Aucun son trouvé pour ce serveur.');
+            return;
+        }
 
-        if (sounds.length === 0) {
-            await interaction.editReply('No sounds found.');
+        const startIndex = (page - 1) * Config.pagination.itemsPerPage;
+        const endIndex = startIndex + Config.pagination.itemsPerPage;
+        const sounds = allSounds.slice(startIndex, endIndex);
+        const totalPages = Math.ceil(allSounds.length / Config.pagination.itemsPerPage);
+
+        if (page > totalPages) {
+            await interaction.editReply(`Il n'y a que ${totalPages} page(s) de sons disponibles.`);
             return;
         }
 
         const embed = new EmbedBuilder()
-            .setTitle('Trollus Sounds')
+            .setTitle('🎵 Sons Trollus Disponibles')
             .setDescription(sounds.map((sound, i) => 
-                `${i + 1}. **${sound.title}**`
+                `${startIndex + i + 1}. **${sound.title}**`
             ).join('\n'))
-            .setFooter({ text: `Page ${page}/${totalPages}` });
+            .setFooter({ 
+                text: `Page ${page}/${totalPages} • Total: ${allSounds.length} sons` 
+            });
 
         await interaction.editReply({ embeds: [embed] });
     } catch (error) {
-        console.error('Failed to list sounds:', error);
-        await interaction.editReply('Failed to list sounds. Please try again later.');
+        console.error('Erreur lors de la liste des sons:', error);
+        await interaction.editReply('Erreur lors de la récupération des sons. Réessayez plus tard.');
     }
 } 

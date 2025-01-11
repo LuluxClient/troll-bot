@@ -35,7 +35,7 @@ export const data = new SlashCommandSubcommandBuilder()
     )
     .addNumberOption(option =>
         option.setName('volume')
-            .setDescription('Volume multiplier (0.1 to 5.0)')
+            .setDescription('Volume multiplier (0.1 to 10.0)')
             .setMinValue(0.1)
             .setMaxValue(5.0)
     );
