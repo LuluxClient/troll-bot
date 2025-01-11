@@ -5,7 +5,6 @@ import { Config } from '../config';
 export async function isUserAllowed(interaction: ChatInputCommandInteraction): Promise<boolean> {
     const userId = interaction.user.id;
     
-    // Check if user is in hardcoded admin list
     if (Config.allowedUsers.includes(userId)) {
         return true;
     }
@@ -14,8 +13,9 @@ export async function isUserAllowed(interaction: ChatInputCommandInteraction): P
         return false;
     }
 
-    // Check if user is in database allowed users
     const db = await JsonDatabase.getInstance();
     const allowedUsers = db.getAllowedUsers(interaction.guildId);
     return allowedUsers.includes(userId);
 } 
+
+// TODO: Add permissions for each command in the future (maybe uwu)

@@ -28,7 +28,6 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
     await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
 
-    // Check permissions first
     if (!await isUserAllowed(interaction)) {
         await interaction.editReply('You do not have permission to use this command.');
         return;
@@ -45,6 +44,12 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     try {
         const youtube = YoutubeService.getInstance();
         const db = await JsonDatabase.getInstance();
+
+        const existingSounds = await db.getAllSounds(interaction.guildId);
+        if (existingSounds.some(sound => sound.title.toLowerCase() === title.toLowerCase())) {
+            await interaction.editReply(`A sound with the name "${title}" already exists. Please choose a different name.`);
+            return;
+        }
 
         await interaction.editReply('Downloading sound... This might take a moment.');
         

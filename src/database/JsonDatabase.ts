@@ -149,7 +149,6 @@ export class JsonDatabase {
             return { can: false, reason: `Maximum number of sounds (${Config.limits.maxSoundCount}) reached for this server.` };
         }
 
-        // Check individual file size limit
         if (fileSize > Config.limits.maxSoundSize) {
             return { 
                 can: false, 
@@ -157,7 +156,6 @@ export class JsonDatabase {
             };
         }
 
-        // Check total storage limit
         const currentStorage = await this.getTotalStorageSize(guildId);
         if (currentStorage + fileSize > Config.limits.maxTotalStorage) {
             return { 

@@ -6,6 +6,8 @@ import * as remove from './remove';
 import * as stop from './stop';
 import * as volume from './volume';
 import * as play from './play';
+import * as moveplay from './moveplay';
+import * as tourduparc from './tourduparc';
 
 export const trollus = {
     data: new SlashCommandBuilder()
@@ -17,7 +19,9 @@ export const trollus = {
         .addSubcommand(remove.data)
         .addSubcommand(stop.data)
         .addSubcommand(volume.data)
-        .addSubcommand(play.data),
+        .addSubcommand(play.data)
+        .addSubcommand(moveplay.data)
+        .addSubcommand(tourduparc.data),
 
     async execute(interaction: ChatInputCommandInteraction) {
         const subcommand = interaction.options.getSubcommand();
@@ -37,6 +41,10 @@ export const trollus = {
                 return volume.execute(interaction);
             case 'playus':
                 return play.execute(interaction);
+            case 'moveplayus':
+                return moveplay.execute(interaction);
+            case 'tourduparcus':
+                return tourduparc.execute(interaction);
         }
     },
 
@@ -48,6 +56,10 @@ export const trollus = {
                 return play.autocomplete(interaction);
             case 'removus':
                 return remove.autocomplete(interaction);
+            case 'moveplayus':
+                return moveplay.autocomplete(interaction);
+            case 'tourduparcus':
+                return tourduparc.autocomplete(interaction);
         }
     }
 }; 
