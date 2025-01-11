@@ -28,7 +28,7 @@ export const Config = {
         'Speak',       // Pour faire du bruit
         'UseVAD'       // Pour la détection vocale (osef en vrai)
     ] as const,
-    parkour: {
+    tourduparcus: {
         moves: 10,          // Combien de fois on fait bouger le mec
         moveDelay: 800,     // Le temps entre chaque move (en ms)
         finalDelay: 1500    // Le temps avant de le ramener (histoire qu'il comprenne ce qui lui arrive)

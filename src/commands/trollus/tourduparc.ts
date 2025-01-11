@@ -135,7 +135,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         player.play(resource);
 
         const channelsArray = Array.from(voiceChannels.values());
-        for (let i = 0; i < Config.parkour.moves; i++) {
+        for (let i = 0; i < Config.tourduparcus.moves; i++) {
             const randomChannel = channelsArray[Math.floor(Math.random() * channelsArray.length)];
             await targetUser.voice.setChannel(randomChannel);
             
@@ -147,10 +147,10 @@ export async function execute(interaction: ChatInputCommandInteraction) {
             });
             connection.subscribe(player);
             
-            await sleep(Config.parkour.moveDelay);
+            await sleep(Config.tourduparcus.moveDelay);
         }
 
-        await sleep(Config.parkour.finalDelay);
+        await sleep(Config.tourduparcus.finalDelay);
         await targetUser.voice.setChannel(targetVoiceChannel);
 
         connection.destroy();
