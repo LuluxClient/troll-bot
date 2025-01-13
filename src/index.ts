@@ -36,19 +36,26 @@ client.on(Events.InteractionCreate, async interaction => {
         }
 
         await command.execute(interaction);
-    } catch (error) {
+    } catch (error: any) {
         console.error('[DEBUG] Error executing command:', error);
+        
+        if (error.code === 10062 || error.code === 40060) return;
+
         if (interaction.isChatInputCommand()) {
-            if (interaction.replied || interaction.deferred) {
-                await interaction.followUp({
-                    content: 'There was an error executing this command!',
-                    ephemeral: true
-                });
-            } else {
-                await interaction.reply({
-                    content: 'There was an error executing this command!',
-                    ephemeral: true
-                });
+            try {
+                if (interaction.replied || interaction.deferred) {
+                    await interaction.followUp({
+                        content: 'Une erreur est survenue lors de l\'exécution de la commande!',
+                        ephemeral: true
+                    });
+                } else {
+                    await interaction.reply({
+                        content: 'Une erreur est survenue lors de l\'exécution de la commande!',
+                        ephemeral: true
+                    });
+                }
+            } catch (e) {
+                console.error('Failed to send error message:', e);
             }
         }
     }
