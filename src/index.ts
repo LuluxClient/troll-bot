@@ -35,19 +35,26 @@ client.on(Events.InteractionCreate, async interaction => {
             return;
         }
 
-        const timeout = setTimeout(() => {
-            if (!interaction.replied && !interaction.deferred) {
-                interaction.reply({
-                    content: 'La commande a pris trop de temps à s\'exécuter.',
-                    flags: MessageFlags.Ephemeral
-                }).catch(console.error);
-            }
-        }, 2500);
+        const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => {
+                if (interaction.isChatInputCommand()) {
+                    if (!interaction.replied && !interaction.deferred) {
+                        interaction.reply({
+                            content: 'La commande a pris trop de temps à s\'exécuter.',
+                            flags: MessageFlags.Ephemeral
+                        }).catch(console.error);
+                    }
+                }
+                reject(new Error('Command timeout'));
+            }, 2500);
+        });
 
         try {
-            await command.execute(interaction);
-        } finally {
-            clearTimeout(timeout);
+            await Promise.race([command.execute(interaction), timeoutPromise]);
+        } catch (error) {
+            if (error instanceof Error && error.message !== 'Command timeout') {
+                throw error;
+            }
         }
 
     } catch (error: any) {
@@ -55,20 +62,22 @@ client.on(Events.InteractionCreate, async interaction => {
         
         if (error.code === 10062 || error.code === 40060) return;
 
-        try {
-            if (!interaction.replied && !interaction.deferred) {
-                await interaction.reply({
-                    content: 'Une erreur est survenue lors de l\'exécution de la commande!',
-                    flags: MessageFlags.Ephemeral
-                });
-            } else {
-                await interaction.followUp({
-                    content: 'Une erreur est survenue lors de l\'exécution de la commande!',
-                    flags: MessageFlags.Ephemeral
-                });
+        if (interaction.isChatInputCommand()) {
+            try {
+                if (!interaction.replied && !interaction.deferred) {
+                    await interaction.reply({
+                        content: 'Une erreur est survenue lors de l\'exécution de la commande!',
+                        flags: MessageFlags.Ephemeral
+                    });
+                } else {
+                    await interaction.followUp({
+                        content: 'Une erreur est survenue lors de l\'exécution de la commande!',
+                        flags: MessageFlags.Ephemeral
+                    });
+                }
+            } catch (e) {
+                console.error('Failed to send error message:', e);
             }
-        } catch (e) {
-            console.error('Failed to send error message:', e);
         }
     }
 });
