@@ -25,7 +25,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         return;
     }
 
-    await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
+    await interaction.deferReply({ ephemeral: true });
     
     const action = interaction.options.getString('action', true);
     const user = interaction.options.getUser('user', true);

@@ -20,7 +20,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         return;
     }
 
-    await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
+    await interaction.deferReply({ ephemeral: true });
 
     if (!await isUserAllowed(interaction)) {
         await interaction.editReply('You do not have permission to use this command.');

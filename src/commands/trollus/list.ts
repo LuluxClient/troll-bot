@@ -17,7 +17,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         return;
     }
 
-    await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
+    await interaction.deferReply({ ephemeral: true });
     
     try {
         const db = await JsonDatabase.getInstance();

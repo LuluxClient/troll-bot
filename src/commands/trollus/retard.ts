@@ -82,27 +82,21 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         return;
     }
 
-    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+    await interaction.deferReply({ ephemeral: true });
 
     if (!await isUserAllowed(interaction)) {
-        await interaction.editReply({ 
-            content: 'Vous n\'avez pas la permission d\'utiliser cette commande.',
-        });
+        await interaction.editReply('Vous n\'avez pas la permission d\'utiliser cette commande.');
         return;
     }
 
     const targetUser = interaction.options.getMember('user');
     if (!(targetUser instanceof GuildMember)) {
-        await interaction.editReply({ 
-            content: 'Utilisateur invalide.',
-        });
+        await interaction.editReply('Utilisateur invalide.');
         return;
     }
 
     if (activeChecks.has(targetUser.id)) {
-        await interaction.editReply({ 
-            content: 'Cet utilisateur est déjà en train d\'être spammé.',
-        });
+        await interaction.editReply('Cet utilisateur est déjà en train d\'être spammé.');
         return;
     }
 
@@ -122,14 +116,10 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         activeChecks.set(targetUser.id, checkInterval);
 
         await channel.send(`${targetUser} EST EN RETARD !!! RÉVEILLEZ-VOUS !!!`);
-        await interaction.editReply({ 
-            content: `Début du spam pour ${targetUser.displayName}. Salon créé: ${channel}`,
-        });
+        await interaction.editReply(`Début du spam pour ${targetUser.displayName}. Salon créé: ${channel}`);
 
     } catch (error) {
         console.error('Error in retard command:', error);
-        await interaction.editReply({ 
-            content: 'Erreur lors de l\'exécution de la commande.',
-        });
+        await interaction.editReply('Erreur lors de l\'exécution de la commande.');
     }
 } 
