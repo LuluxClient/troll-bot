@@ -60,7 +60,7 @@ client.on(Events.InteractionCreate, async interaction => {
     } catch (error: any) {
         console.error('[DEBUG] Error executing command:', error);
         
-        if (error.code === 10062 || error.code === 40060) return;
+        if (error.code === 10062 || error.code === 40060 || error.code === 10015) return;
 
         if (interaction.isChatInputCommand()) {
             try {
