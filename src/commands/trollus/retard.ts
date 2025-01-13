@@ -30,47 +30,64 @@ async function checkUserStatus(
     startTime: number,
     checkInterval: NodeJS.Timeout
 ) {
-    const now = Date.now();
-    const timeElapsed = now - startTime;
+    try {
+        const now = Date.now();
+        const timeElapsed = now - startTime;
 
-    if (timeElapsed >= Config.retardus.maxDuration) {
-        clearInterval(checkInterval);
-        activeChecks.delete(targetUser.id);
-        await channel.send({
-            content: `${targetUser}, temps écoulé ! Tu as raté le summon fdp...`
-        });
-        await sleep(Config.retardus.deleteDelay);
-        await channel.delete();
-        return;
+        if (timeElapsed >= Config.retardus.maxDuration) {
+            clearInterval(checkInterval);
+            activeChecks.delete(targetUser.id);
+            await channel.send(`${targetUser}, temps écoulé ! Tu as raté le summon fdp...`);
+            await sleep(Config.retardus.deleteDelay);
+            await channel.delete();
+            return;
+        }
+
+        let member;
+        try {
+            member = await channel.guild.members.fetch(targetUser.id);
+        } catch (error: any) {
+            if (error.code === 10007) { // Unknown Member
+                clearInterval(checkInterval);
+                activeChecks.delete(targetUser.id);
+                await channel.send(`${targetUser} a quitté le serveur, arrêt du spam.`);
+                await sleep(Config.retardus.deleteDelay);
+                await channel.delete();
+                return;
+            }
+            throw error;
+        }
+
+        const isInVoice = member.voice.channel !== null;
+        const isMuted = member.voice.mute;
+
+        if (isInVoice && !isMuted) {
+            clearInterval(checkInterval);
+            activeChecks.delete(targetUser.id);
+            await channel.send({
+                content: `${targetUser} est enfin là et unmute ! Bon retour parmi nous !`
+            });
+            await sleep(Config.retardus.deleteDelay);
+            await channel.delete();
+            return;
+        }
+
+        const messages = [
+            `${targetUser} RÉVEILLE TOI !!!`,
+            `${targetUser} ON T'ATTEND !!!`,
+            `${targetUser} TU ES EN RETARD !!!`,
+            `${targetUser} CONNECTE TOI !!!`,
+            `${targetUser} ???????????`,
+            `${targetUser} ALLOOOOOO`,
+            `${targetUser} CEST VALO TIME FILS DE PUTE !!!`
+        ];
+
+        const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+        await channel.send(randomMessage);
+    } catch (error: any) {
+        console.error('Erreur lors de la vérification de l\'utilisateur:', error);
+        // Ne pas arrêter le spam pour des erreurs temporaires
     }
-
-    const member = await channel.guild.members.fetch(targetUser.id);
-    const isInVoice = member.voice.channel !== null;
-    const isMuted = member.voice.mute;
-
-    if (isInVoice && !isMuted) {
-        clearInterval(checkInterval);
-        activeChecks.delete(targetUser.id);
-        await channel.send({
-            content: `${targetUser} est enfin là et unmute ! Bon retour parmi nous !`
-        });
-        await sleep(Config.retardus.deleteDelay);
-        await channel.delete();
-        return;
-    }
-
-    const messages = [
-        `${targetUser} RÉVEILLE TOI !!!`,
-        `${targetUser} ON T'ATTEND !!!`,
-        `${targetUser} TU ES EN RETARD !!!`,
-        `${targetUser} CONNECTE TOI !!!`,
-        `${targetUser} ???????????`,
-        `${targetUser} ALLOOOOOO`,
-        `${targetUser} CEST VALO TIME FILS DE PUTE !!!`
-    ];
-
-    const randomMessage = messages[Math.floor(Math.random() * messages.length)];
-    await channel.send(randomMessage);
 }
 
 export async function execute(interaction: ChatInputCommandInteraction) {
