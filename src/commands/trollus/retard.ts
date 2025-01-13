@@ -18,6 +18,11 @@ export const data = new SlashCommandSubcommandBuilder()
         option.setName('user')
             .setDescription('L\'utilisateur en retard')
             .setRequired(true)
+    )
+    .addBooleanOption(option =>
+        option.setName('stop')
+            .setDescription('Arrêter le spam pour cet utilisateur')
+            .setRequired(false)
     );
 
 function sleep(ms: number): Promise<void> {
@@ -31,6 +36,18 @@ async function checkUserStatus(
     checkInterval: NodeJS.Timeout
 ) {
     try {
+        // Vérifier si le canal existe toujours
+        try {
+            await channel.fetch();
+        } catch (error: any) {
+            if (error.code === 10003) { // Unknown Channel
+                clearInterval(checkInterval);
+                activeChecks.delete(targetUser.id);
+                return;
+            }
+            throw error;
+        }
+
         const now = Date.now();
         const timeElapsed = now - startTime;
 
@@ -85,8 +102,7 @@ async function checkUserStatus(
         const randomMessage = messages[Math.floor(Math.random() * messages.length)];
         await channel.send(randomMessage);
     } catch (error: any) {
-        console.error('Erreur lors de la vérification de l\'utilisateur:', error);
-        // Ne pas arrêter le spam pour des erreurs temporaires
+        console.error('Erreur lors de la vérification:', error);
     }
 }
 
@@ -94,12 +110,12 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     if (!interaction.guildId) {
         await interaction.reply({ 
             content: 'Cette commande doit être utilisée dans un serveur.', 
-            ephemeral: true 
+            flags: MessageFlags.Ephemeral 
         });
         return;
     }
 
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     if (!await isUserAllowed(interaction)) {
         await interaction.editReply('Vous n\'avez pas la permission d\'utiliser cette commande.');
@@ -114,6 +130,32 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
     if (activeChecks.has(targetUser.id)) {
         await interaction.editReply('Cet utilisateur est déjà en train d\'être spammé.');
+        return;
+    }
+
+    const shouldStop = interaction.options.getBoolean('stop');
+    if (shouldStop) {
+        const userKey = targetUser.id;
+        if (!activeChecks.has(userKey)) {
+            await interaction.editReply('Cet utilisateur n\'est pas en train d\'être spammé.');
+            return;
+        }
+
+        clearInterval(activeChecks.get(userKey));
+        activeChecks.delete(userKey);
+
+        // Trouver et supprimer le salon de spam
+        const spamChannel = interaction.guild!.channels.cache
+            .find(channel => 
+                channel.name === `retard-${targetUser.user.username}` && 
+                channel.type === ChannelType.GuildText
+            );
+
+        if (spamChannel) {
+            await spamChannel.delete();
+        }
+
+        await interaction.editReply(`Spam arrêté pour ${targetUser.displayName}.`);
         return;
     }
 
