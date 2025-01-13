@@ -1,4 +1,4 @@
-import { Client, Events, GatewayIntentBits } from 'discord.js';
+import { Client, Events, GatewayIntentBits, MessageFlags } from 'discord.js';
 import { config } from 'dotenv';
 import * as commandModules from './commands';
 
@@ -35,28 +35,40 @@ client.on(Events.InteractionCreate, async interaction => {
             return;
         }
 
-        await command.execute(interaction);
+        const timeout = setTimeout(() => {
+            if (!interaction.replied && !interaction.deferred) {
+                interaction.reply({
+                    content: 'La commande a pris trop de temps à s\'exécuter.',
+                    flags: MessageFlags.Ephemeral
+                }).catch(console.error);
+            }
+        }, 2500);
+
+        try {
+            await command.execute(interaction);
+        } finally {
+            clearTimeout(timeout);
+        }
+
     } catch (error: any) {
         console.error('[DEBUG] Error executing command:', error);
         
         if (error.code === 10062 || error.code === 40060) return;
 
-        if (interaction.isChatInputCommand()) {
-            try {
-                if (interaction.replied || interaction.deferred) {
-                    await interaction.followUp({
-                        content: 'Une erreur est survenue lors de l\'exécution de la commande!',
-                        ephemeral: true
-                    });
-                } else {
-                    await interaction.reply({
-                        content: 'Une erreur est survenue lors de l\'exécution de la commande!',
-                        ephemeral: true
-                    });
-                }
-            } catch (e) {
-                console.error('Failed to send error message:', e);
+        try {
+            if (!interaction.replied && !interaction.deferred) {
+                await interaction.reply({
+                    content: 'Une erreur est survenue lors de l\'exécution de la commande!',
+                    flags: MessageFlags.Ephemeral
+                });
+            } else {
+                await interaction.followUp({
+                    content: 'Une erreur est survenue lors de l\'exécution de la commande!',
+                    flags: MessageFlags.Ephemeral
+                });
             }
+        } catch (e) {
+            console.error('Failed to send error message:', e);
         }
     }
 });
