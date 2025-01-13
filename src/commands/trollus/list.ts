@@ -13,11 +13,14 @@ export const data = new SlashCommandSubcommandBuilder()
 
 export async function execute(interaction: ChatInputCommandInteraction) {
     if (!interaction.guildId) {
-        await interaction.reply({ content: 'Cette commande doit être utilisée dans un serveur.', ephemeral: true });
+        await interaction.reply({ 
+            content: 'Cette commande doit être utilisée dans un serveur.', 
+            flags: MessageFlags.Ephemeral 
+        });
         return;
     }
 
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
     
     try {
         const db = await JsonDatabase.getInstance();
