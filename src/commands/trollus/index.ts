@@ -8,6 +8,7 @@ import * as volume from './volume';
 import * as play from './play';
 import * as moveplay from './moveplay';
 import * as tourduparc from './tourduparc';
+import * as retard from './retard';
 
 export const trollus = {
     data: new SlashCommandBuilder()
@@ -21,7 +22,8 @@ export const trollus = {
         .addSubcommand(volume.data)
         .addSubcommand(play.data)
         .addSubcommand(moveplay.data)
-        .addSubcommand(tourduparc.data),
+        .addSubcommand(tourduparc.data)
+        .addSubcommand(retard.data),
 
     async execute(interaction: ChatInputCommandInteraction) {
         const subcommand = interaction.options.getSubcommand();
@@ -45,6 +47,8 @@ export const trollus = {
                 return moveplay.execute(interaction);
             case 'tourduparcus':
                 return tourduparc.execute(interaction);
+            case 'retardus':
+                return retard.execute(interaction);
         }
     },
 

@@ -34,6 +34,11 @@ export const Config = {
         moveDelay: 800,     // Le temps entre chaque move (en ms)
         finalDelay: 1500    // Le temps avant de le ramener (histoire qu'il comprenne ce qui lui arrive)
     },
+    retardus: {
+        messageDelay: 2500,     // Délai entre chaque message de spam (5 sec)
+        maxDuration: 1200000,   // Durée max du spam (20 mins)
+        deleteDelay: 10000       // Délai avant suppression du salon (1 sec)
+    },
 } as const;
 
 export type ConfigType = typeof Config; 
