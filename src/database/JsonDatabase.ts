@@ -5,7 +5,9 @@ import { DatabaseSchema, Sound } from '../types';
 
 export class JsonDatabase {
     private static instance: JsonDatabase;
-    private data: DatabaseSchema;
+    private data: DatabaseSchema = {
+        servers: {}
+    };
     private readonly dbPath: string;
 
     private constructor() {
@@ -20,6 +22,7 @@ export class JsonDatabase {
             this.data.servers[guildId] = {
                 sounds: [],
                 allowedUsers: [],
+                blacklist: [],
                 settings: {
                     defaultVolume: Config.defaultVolume
                 }
@@ -165,5 +168,21 @@ export class JsonDatabase {
         }
 
         return { can: true };
+    }
+
+    public async getBlacklist(guildId: string): Promise<string[]> {
+        this.initServerData(guildId);
+        return this.data.servers[guildId].blacklist || [];
+    }
+
+    public async setBlacklist(guildId: string, blacklist: string[]): Promise<void> {
+        this.initServerData(guildId);
+        this.data.servers[guildId].blacklist = blacklist;
+        await this.save();
+    }
+
+    public async isUserBlacklisted(guildId: string, userId: string): Promise<boolean> {
+        const blacklist = await this.getBlacklist(guildId);
+        return blacklist.includes(userId);
     }
 } 

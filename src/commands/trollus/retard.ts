@@ -8,6 +8,7 @@ import {
 } from 'discord.js';
 import { isUserAllowed } from '../../utils/permissions';
 import { Config } from '../../config';
+import { JsonDatabase } from '../../database/JsonDatabase';
 
 const activeChecks = new Map<string, NodeJS.Timeout>();
 
@@ -153,6 +154,12 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         }
 
         await interaction.editReply(`Spam arrêté pour ${targetUser.displayName}.`);
+        return;
+    }
+
+    const db = await JsonDatabase.getInstance();
+    if (await db.isUserBlacklisted(interaction.guildId, targetUser.id)) {
+        await interaction.editReply('Cet utilisateur est dans la blacklist et ne peut pas être ciblé par cette commande.');
         return;
     }
 

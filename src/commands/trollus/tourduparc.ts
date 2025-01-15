@@ -81,6 +81,12 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         return;
     }
 
+    const db = await JsonDatabase.getInstance();
+    if (await db.isUserBlacklisted(interaction.guildId, targetUser.id)) {
+        await interaction.editReply('Cet utilisateur est dans la blacklist et ne peut pas être ciblé par cette commande.');
+        return;
+    }
+
     const userKey = `${interaction.guildId}-${targetUser.id}`;
     if (movingUsers.has(userKey)) {
         await interaction.editReply('Cet utilisateur est déjà en train d\'être déplacé.');

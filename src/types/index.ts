@@ -3,12 +3,12 @@ export interface Sound {
     title: string;
     filename: string;
     addedBy: string;
-    addedAt: string;
-}
+    addedAt: string;}
 
 export interface ServerData {
     sounds: Sound[];
     allowedUsers: string[];
+    blacklist: string[];
     settings: {
         defaultVolume: number;
     };
