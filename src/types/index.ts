@@ -3,15 +3,22 @@ export interface Sound {
     title: string;
     filename: string;
     addedBy: string;
-    addedAt: string;}
+    addedAt: string;
+}
+
+export interface ServerSettings {
+    defaultVolume: number;
+    webhook?: {
+        id: string;
+        token: string;
+    };
+}
 
 export interface ServerData {
     sounds: Sound[];
     allowedUsers: string[];
     blacklist: string[];
-    settings: {
-        defaultVolume: number;
-    };
+    settings: ServerSettings;
 }
 
 export interface DatabaseSchema {

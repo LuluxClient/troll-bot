@@ -35,7 +35,7 @@ export const Config = {
         finalDelay: 1500    // Le temps avant de le ramener (histoire qu'il comprenne ce qui lui arrive)
     },
     retardus: {
-        messageDelay: 2500,     // Délai entre chaque message de spam (5 sec)
+        messageDelay: 2500,     // Délai entre chaque message de spam (2.5 sec)
         maxDuration: 1200000,   // Durée max du spam (20 mins)
         deleteDelay: 10000       // Délai avant suppression du salon (1 sec)
     },

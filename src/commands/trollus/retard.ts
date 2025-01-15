@@ -4,7 +4,8 @@ import {
     GuildMember,
     MessageFlags,
     ChannelType,
-    TextChannel
+    TextChannel,
+    WebhookClient
 } from 'discord.js';
 import { isUserAllowed } from '../../utils/permissions';
 import { Config } from '../../config';
@@ -34,7 +35,8 @@ async function checkUserStatus(
     channel: TextChannel,
     targetUser: GuildMember,
     startTime: number,
-    checkInterval: NodeJS.Timeout
+    checkInterval: NodeJS.Timeout,
+    webhook: WebhookClient
 ) {
     try {
         // Vérifier si le canal existe toujours
@@ -44,6 +46,7 @@ async function checkUserStatus(
             if (error.code === 10003) { // Unknown Channel
                 clearInterval(checkInterval);
                 activeChecks.delete(targetUser.id);
+                webhook.destroy();
                 return;
             }
             throw error;
@@ -55,7 +58,8 @@ async function checkUserStatus(
         if (timeElapsed >= Config.retardus.maxDuration) {
             clearInterval(checkInterval);
             activeChecks.delete(targetUser.id);
-            await channel.send(`${targetUser}, temps écoulé ! Tu as raté le summon fdp...`);
+            await webhook.send(`${targetUser}, temps écoulé ! Tu as raté le summon fdp...`);
+            webhook.destroy();
             await sleep(Config.retardus.deleteDelay);
             await channel.delete();
             return;
@@ -68,7 +72,8 @@ async function checkUserStatus(
             if (error.code === 10007) { // Unknown Member
                 clearInterval(checkInterval);
                 activeChecks.delete(targetUser.id);
-                await channel.send(`${targetUser} a quitté le serveur, arrêt du spam.`);
+                await webhook.send(`${targetUser} a quitté le serveur, arrêt du spam.`);
+                webhook.destroy();
                 await sleep(Config.retardus.deleteDelay);
                 await channel.delete();
                 return;
@@ -82,9 +87,10 @@ async function checkUserStatus(
         if (isInVoice && !isMuted) {
             clearInterval(checkInterval);
             activeChecks.delete(targetUser.id);
-            await channel.send({
+            await webhook.send({
                 content: `${targetUser} est enfin là et unmute ! Bon retour parmi nous !`
             });
+            webhook.destroy();
             await sleep(Config.retardus.deleteDelay);
             await channel.delete();
             return;
@@ -101,7 +107,11 @@ async function checkUserStatus(
         ];
 
         const randomMessage = messages[Math.floor(Math.random() * messages.length)];
-        await channel.send(randomMessage);
+        await webhook.send({
+            content: randomMessage,
+            username: 'Trollus Bot',
+            avatarURL: 'https://cdn.discordapp.com/attachments/1099852374174077012/1329211395727949924/face.png?ex=67898414&is=67883294&hm=2ecf756d2ea371c5dc8cb2eb3727c75fc4b7d18eeac133fd2c7255f920b78da0&' // Vous pouvez changer l'URL de l'avatar
+        });
     } catch (error: any) {
         console.error('Erreur lors de la vérification:', error);
     }
@@ -130,8 +140,6 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     }
 
     const shouldStop = interaction.options.getBoolean('stop') ?? false;
-    console.log('Stop option value:', shouldStop); // Debug log
-
     if (shouldStop === true) {
         const userKey = targetUser.id;
         if (!activeChecks.has(userKey)) {
@@ -175,15 +183,34 @@ export async function execute(interaction: ChatInputCommandInteraction) {
             topic: `Salon de spam pour ${targetUser.displayName}`
         });
 
+        // Créer ou récupérer le webhook
+        let webhookData = db.getWebhook(interaction.guildId);
+        let webhook: WebhookClient;
+
+        if (!webhookData) {
+            const createdWebhook = await channel.createWebhook({
+                name: 'Trollus Bot',
+                avatar: 'https://cdn.discordapp.com/attachments/1099852374174077012/1329211395727949924/face.png?ex=67898414&is=67883294&hm=2ecf756d2ea371c5dc8cb2eb3727c75fc4b7d18eeac133fd2c7255f920b78da0&' // Vous pouvez changer l'URL de l'avatar
+            });
+            await db.setWebhook(interaction.guildId, createdWebhook.id, createdWebhook.token!);
+            webhook = new WebhookClient({ id: createdWebhook.id, token: createdWebhook.token! });
+        } else {
+            webhook = new WebhookClient({ id: webhookData.id, token: webhookData.token });
+        }
+
         const startTime = Date.now();
         const checkInterval = setInterval(
-            () => checkUserStatus(channel, targetUser, startTime, checkInterval),
+            () => checkUserStatus(channel, targetUser, startTime, checkInterval, webhook),
             Config.retardus.messageDelay
         );
 
         activeChecks.set(targetUser.id, checkInterval);
 
-        await channel.send(`${targetUser} EST EN RETARD !!! RÉVEILLEZ-VOUS !!!`);
+        await webhook.send({
+            content: `${targetUser} EST EN RETARD !!! RÉVEILLEZ-VOUS !!!`,
+            username: 'Trollus Bot',
+            avatarURL: 'https://i.imgur.com/AfFp7pu.png' // Vous pouvez changer l'URL de l'avatar
+        });
         await interaction.editReply(`Début du spam pour ${targetUser.displayName}. Salon créé: ${channel}`);
 
     } catch (error) {
