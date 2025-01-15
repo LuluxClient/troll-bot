@@ -190,24 +190,4 @@ export class JsonDatabase {
         const blacklist = await this.getBlacklist(guildId);
         return blacklist.includes(userId);
     }
-
-    public async setWebhook(guildId: string, webhookId: string, webhookToken: string): Promise<void> {
-        this.initServerData(guildId);
-        this.data.servers[guildId].settings.webhook = {
-            id: webhookId,
-            token: webhookToken
-        };
-        await this.save();
-    }
-
-    public getWebhook(guildId: string): { id: string; token: string } | undefined {
-        this.initServerData(guildId);
-        return this.data.servers[guildId].settings.webhook;
-    }
-
-    public async removeWebhook(guildId: string): Promise<void> {
-        this.initServerData(guildId);
-        delete this.data.servers[guildId].settings.webhook;
-        await this.save();
-    }
 } 

@@ -8,10 +8,6 @@ export interface Sound {
 
 export interface ServerSettings {
     defaultVolume: number;
-    webhook?: {
-        id: string;
-        token: string;
-    };
 }
 
 export interface ServerData {

@@ -183,20 +183,12 @@ export async function execute(interaction: ChatInputCommandInteraction) {
             topic: `Salon de spam pour ${targetUser.displayName}`
         });
 
-        // Créer ou récupérer le webhook
-        let webhookData = db.getWebhook(interaction.guildId);
-        let webhook: WebhookClient;
+        const createdWebhook = await channel.createWebhook({
+            name: 'Trollus Bot',
+            avatar: 'https://cdn.discordapp.com/attachments/1099852374174077012/1329211395727949924/face.png?ex=67898414&is=67883294&hm=2ecf756d2ea371c5dc8cb2eb3727c75fc4b7d18eeac133fd2c7255f920b78da0&'
+        });
 
-        if (!webhookData) {
-            const createdWebhook = await channel.createWebhook({
-                name: 'Trollus Bot',
-                avatar: 'https://cdn.discordapp.com/attachments/1099852374174077012/1329211395727949924/face.png?ex=67898414&is=67883294&hm=2ecf756d2ea371c5dc8cb2eb3727c75fc4b7d18eeac133fd2c7255f920b78da0&' // Vous pouvez changer l'URL de l'avatar
-            });
-            await db.setWebhook(interaction.guildId, createdWebhook.id, createdWebhook.token!);
-            webhook = new WebhookClient({ id: createdWebhook.id, token: createdWebhook.token! });
-        } else {
-            webhook = new WebhookClient({ id: webhookData.id, token: webhookData.token });
-        }
+        const webhook = new WebhookClient({ id: createdWebhook.id, token: createdWebhook.token! });
 
         const startTime = Date.now();
         const checkInterval = setInterval(
@@ -209,7 +201,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         await webhook.send({
             content: `${targetUser} EST EN RETARD !!! RÉVEILLEZ-VOUS !!!`,
             username: 'Trollus Bot',
-            avatarURL: 'https://i.imgur.com/AfFp7pu.png' // Vous pouvez changer l'URL de l'avatar
+            avatarURL: 'https://cdn.discordapp.com/attachments/1099852374174077012/1329211395727949924/face.png?ex=67898414&is=67883294&hm=2ecf756d2ea371c5dc8cb2eb3727c75fc4b7d18eeac133fd2c7255f920b78da0&'
         });
         await interaction.editReply(`Début du spam pour ${targetUser.displayName}. Salon créé: ${channel}`);
 
