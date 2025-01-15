@@ -150,15 +150,21 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         clearInterval(activeChecks.get(userKey));
         activeChecks.delete(userKey);
 
-        // Trouver et supprimer le salon de spam
-        const spamChannel = interaction.guild!.channels.cache
-            .find(channel => 
-                channel.name === `retard-${targetUser.user.username}` && 
-                channel.type === ChannelType.GuildText
-            );
+        const channels = await interaction.guild!.channels.fetch();
+        const spamChannel = channels.find(channel => 
+            channel?.name === `retard-${targetUser.user.username}` && 
+            channel?.type === ChannelType.GuildText
+        );
 
         if (spamChannel) {
-            await spamChannel.delete();
+            try {
+                await spamChannel.delete();
+                console.log('Salon supprimé:', spamChannel.name);
+            } catch (error) {
+                console.error('Erreur lors de la suppression du salon:', error);
+            }
+        } else {
+            console.log('Aucun salon trouvé pour:', targetUser.user.username);
         }
 
         await interaction.editReply(`Spam arrêté pour ${targetUser.displayName}.`);
@@ -178,7 +184,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
     try {
         const channel = await interaction.guild!.channels.create({
-            name: `retard-${targetUser.user.username}`,
+            name: `retard-${targetUser.user.username}`, // ne pas changer le nom du salon stp fdp
             type: ChannelType.GuildText,
             topic: `Salon de spam pour ${targetUser.displayName}`
         });
