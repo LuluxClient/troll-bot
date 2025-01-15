@@ -27,6 +27,7 @@ export const data = new SlashCommandSubcommandBuilder()
     );
 
 export async function execute(interaction: ChatInputCommandInteraction) {
+    console.log('Début de la commande blacklistus');
     if (!interaction.guildId) {
         await interaction.reply({ 
             content: 'Cette commande doit être utilisée dans un serveur.', 
@@ -36,24 +37,29 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     }
 
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+    console.log('Commande différée');
 
     if (!await isUserAllowed(interaction)) {
         await interaction.editReply('Vous n\'avez pas la permission d\'utiliser cette commande.');
         return;
     }
+    console.log('Permissions vérifiées');
 
     const db = await JsonDatabase.getInstance();
     const action = interaction.options.getString('action', true);
     const targetUser = interaction.options.getMember('user') as GuildMember | null;
+    console.log('Action:', action, 'Target user:', targetUser?.id);
 
-    if (action !== 'list' && !targetUser) {
+    if (action !== 'listus' && !targetUser) {
         await interaction.editReply('Utilisateur invalide.');
         return;
     }
 
     switch (action) {
         case 'addus': {
+            console.log('Tentative d\'ajout à la blacklist');
             const blacklist = await db.getBlacklist(interaction.guildId);
+            console.log('Blacklist actuelle:', blacklist);
             if (blacklist.includes(targetUser!.id)) {
                 await interaction.editReply('Cet utilisateur est déjà dans la blacklist.');
                 return;
@@ -61,6 +67,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
             blacklist.push(targetUser!.id);
             await db.setBlacklist(interaction.guildId, blacklist);
+            console.log('Blacklist mise à jour:', blacklist);
             await interaction.editReply(`${targetUser!.displayName} a été ajouté à la blacklist.`);
             break;
         }

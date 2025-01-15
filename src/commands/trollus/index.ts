@@ -51,6 +51,8 @@ export const trollus = {
                 return tourduparc.execute(interaction);
             case 'retardus':
                 return retard.execute(interaction);
+            case 'blacklistus':
+                return blacklist.execute(interaction);
         }
     },
 
