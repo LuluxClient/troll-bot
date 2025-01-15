@@ -52,7 +52,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     }
 
     switch (action) {
-        case 'add': {
+        case 'addus': {
             const blacklist = await db.getBlacklist(interaction.guildId);
             if (blacklist.includes(targetUser!.id)) {
                 await interaction.editReply('Cet utilisateur est déjà dans la blacklist.');
@@ -64,7 +64,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
             await interaction.editReply(`${targetUser!.displayName} a été ajouté à la blacklist.`);
             break;
         }
-        case 'remove': {
+        case 'removeus': {
             const blacklist = await db.getBlacklist(interaction.guildId);
             const index = blacklist.indexOf(targetUser!.id);
             if (index === -1) {
@@ -77,7 +77,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
             await interaction.editReply(`${targetUser!.displayName} a été retiré de la blacklist.`);
             break;
         }
-        case 'list': {
+        case 'listus': {
             const blacklist = await db.getBlacklist(interaction.guildId);
             if (blacklist.length === 0) {
                 await interaction.editReply('La blacklist est vide.');

@@ -27,6 +27,11 @@ export class JsonDatabase {
                     defaultVolume: Config.defaultVolume
                 }
             };
+        } else {
+            if (!this.data.servers[guildId].blacklist) {
+                this.data.servers[guildId].blacklist = [];
+                this.save().catch(console.error);
+            }
         }
     }
 
