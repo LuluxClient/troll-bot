@@ -128,13 +128,10 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         return;
     }
 
-    if (activeChecks.has(targetUser.id)) {
-        await interaction.editReply('Cet utilisateur est déjà en train d\'être spammé.');
-        return;
-    }
+    const shouldStop = interaction.options.getBoolean('stop') ?? false;
+    console.log('Stop option value:', shouldStop); // Debug log
 
-    const shouldStop = interaction.options.getBoolean('stop');
-    if (shouldStop) {
+    if (shouldStop === true) {
         const userKey = targetUser.id;
         if (!activeChecks.has(userKey)) {
             await interaction.editReply('Cet utilisateur n\'est pas en train d\'être spammé.');
@@ -156,6 +153,11 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         }
 
         await interaction.editReply(`Spam arrêté pour ${targetUser.displayName}.`);
+        return;
+    }
+
+    if (activeChecks.has(targetUser.id)) {
+        await interaction.editReply('Cet utilisateur est déjà en train d\'être spammé.');
         return;
     }
 
