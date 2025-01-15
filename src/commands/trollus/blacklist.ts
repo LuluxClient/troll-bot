@@ -1,5 +1,5 @@
 import { 
-    SlashCommandBuilder, 
+    SlashCommandSubcommandBuilder, 
     ChatInputCommandInteraction,
     GuildMember,
     MessageFlags
@@ -7,33 +7,23 @@ import {
 import { JsonDatabase } from '../../database/JsonDatabase';
 import { isUserAllowed } from '../../utils/permissions';
 
-export const data = new SlashCommandBuilder()
+export const data = new SlashCommandSubcommandBuilder()
     .setName('blacklistus')
     .setDescription('Gère la liste des utilisateurs blacklistés')
-    .addSubcommand(subcommand =>
-        subcommand
-            .setName('add')
-            .setDescription('Ajoute un utilisateur à la blacklist')
-            .addUserOption(option =>
-                option.setName('user')
-                    .setDescription('L\'utilisateur à blacklister')
-                    .setRequired(true)
-            )
+    .addUserOption(option =>
+        option.setName('user')
+            .setDescription('L\'utilisateur à gérer')
+            .setRequired(true)
     )
-    .addSubcommand(subcommand =>
-        subcommand
-            .setName('remove')
-            .setDescription('Retire un utilisateur de la blacklist')
-            .addUserOption(option =>
-                option.setName('user')
-                    .setDescription('L\'utilisateur à retirer de la blacklist')
-                    .setRequired(true)
+    .addStringOption(option =>
+        option.setName('action')
+            .setDescription('Action à effectuer')
+            .setRequired(true)
+            .addChoices(
+                { name: 'Ajouter', value: 'addus' },
+                { name: 'Retirer', value: 'removeus' },
+                { name: 'Liste', value: 'listus' }
             )
-    )
-    .addSubcommand(subcommand =>
-        subcommand
-            .setName('list')
-            .setDescription('Affiche la liste des utilisateurs blacklistés')
     );
 
 export async function execute(interaction: ChatInputCommandInteraction) {
@@ -53,36 +43,30 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     }
 
     const db = await JsonDatabase.getInstance();
-    const subcommand = interaction.options.getSubcommand();
+    const action = interaction.options.getString('action', true);
+    const targetUser = interaction.options.getMember('user') as GuildMember | null;
 
-    switch (subcommand) {
+    if (action !== 'list' && !targetUser) {
+        await interaction.editReply('Utilisateur invalide.');
+        return;
+    }
+
+    switch (action) {
         case 'add': {
-            const targetUser = interaction.options.getMember('user');
-            if (!(targetUser instanceof GuildMember)) {
-                await interaction.editReply('Utilisateur invalide.');
-                return;
-            }
-
             const blacklist = await db.getBlacklist(interaction.guildId);
-            if (blacklist.includes(targetUser.id)) {
+            if (blacklist.includes(targetUser!.id)) {
                 await interaction.editReply('Cet utilisateur est déjà dans la blacklist.');
                 return;
             }
 
-            blacklist.push(targetUser.id);
+            blacklist.push(targetUser!.id);
             await db.setBlacklist(interaction.guildId, blacklist);
-            await interaction.editReply(`${targetUser.displayName} a été ajouté à la blacklist.`);
+            await interaction.editReply(`${targetUser!.displayName} a été ajouté à la blacklist.`);
             break;
         }
         case 'remove': {
-            const targetUser = interaction.options.getMember('user');
-            if (!(targetUser instanceof GuildMember)) {
-                await interaction.editReply('Utilisateur invalide.');
-                return;
-            }
-
             const blacklist = await db.getBlacklist(interaction.guildId);
-            const index = blacklist.indexOf(targetUser.id);
+            const index = blacklist.indexOf(targetUser!.id);
             if (index === -1) {
                 await interaction.editReply('Cet utilisateur n\'est pas dans la blacklist.');
                 return;
@@ -90,7 +74,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
             blacklist.splice(index, 1);
             await db.setBlacklist(interaction.guildId, blacklist);
-            await interaction.editReply(`${targetUser.displayName} a été retiré de la blacklist.`);
+            await interaction.editReply(`${targetUser!.displayName} a été retiré de la blacklist.`);
             break;
         }
         case 'list': {

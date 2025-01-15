@@ -9,6 +9,7 @@ import * as play from './play';
 import * as moveplay from './moveplay';
 import * as tourduparc from './tourduparc';
 import * as retard from './retard';
+import * as blacklist from './blacklist';
 
 export const trollus = {
     data: new SlashCommandBuilder()
@@ -23,7 +24,8 @@ export const trollus = {
         .addSubcommand(play.data)
         .addSubcommand(moveplay.data)
         .addSubcommand(tourduparc.data)
-        .addSubcommand(retard.data),
+        .addSubcommand(retard.data)
+        .addSubcommand(blacklist.data),
 
     async execute(interaction: ChatInputCommandInteraction) {
         const subcommand = interaction.options.getSubcommand();
