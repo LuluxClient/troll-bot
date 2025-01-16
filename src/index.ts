@@ -1,7 +1,7 @@
 import { Client, Events, GatewayIntentBits, MessageFlags } from 'discord.js';
 import { config } from 'dotenv';
 import * as commandModules from './commands';
-import * as guildMemberUpdate from './events/guildMemberUpdate';
+import * as guildMemberUpdate from './commands/trollus/nick';
 
 config();
 
