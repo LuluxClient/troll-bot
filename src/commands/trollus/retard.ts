@@ -69,7 +69,7 @@ async function checkUserStatus(
         try {
             member = await channel.guild.members.fetch(targetUser.id);
         } catch (error: any) {
-            if (error.code === 10007) { // Unknown Member
+            if (error.code === 10007) {
                 clearInterval(checkInterval);
                 activeChecks.delete(targetUser.id);
                 await webhook.send(`${targetUser} a quitté le serveur, arrêt du spam.`);
