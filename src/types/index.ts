@@ -6,6 +6,13 @@ export interface Sound {
     addedAt: string;
 }
 
+export interface ForcedNickname {
+    userId: string;
+    nickname: string;
+    originalNickname: string | null;
+    expiresAt: number;
+}
+
 export interface ServerSettings {
     defaultVolume: number;
 }
@@ -14,6 +21,7 @@ export interface ServerData {
     sounds: Sound[];
     allowedUsers: string[];
     blacklist: string[];
+    forcedNicknames: ForcedNickname[];
     settings: ServerSettings;
 }
 

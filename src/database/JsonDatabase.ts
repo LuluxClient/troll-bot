@@ -1,7 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { Config } from '../config';
-import { DatabaseSchema, Sound } from '../types';
+import { DatabaseSchema, Sound, ForcedNickname } from '../types';
 
 export class JsonDatabase {
     private static instance: JsonDatabase;
@@ -23,6 +23,7 @@ export class JsonDatabase {
                 sounds: [],
                 allowedUsers: [],
                 blacklist: [],
+                forcedNicknames: [],
                 settings: {
                     defaultVolume: Config.defaultVolume
                 }
@@ -30,6 +31,10 @@ export class JsonDatabase {
         } else {
             if (!this.data.servers[guildId].blacklist) {
                 this.data.servers[guildId].blacklist = [];
+                this.save().catch(console.error);
+            }
+            if (!this.data.servers[guildId].forcedNicknames) {
+                this.data.servers[guildId].forcedNicknames = [];
                 this.save().catch(console.error);
             }
         }
@@ -189,5 +194,47 @@ export class JsonDatabase {
     public async isUserBlacklisted(guildId: string, userId: string): Promise<boolean> {
         const blacklist = await this.getBlacklist(guildId);
         return blacklist.includes(userId);
+    }
+
+    public async addForcedNickname(guildId: string, userId: string, nickname: string, originalNickname: string | null, durationMinutes: number): Promise<void> {
+        this.initServerData(guildId);
+        
+        this.data.servers[guildId].forcedNicknames = this.data.servers[guildId].forcedNicknames.filter(n => n.userId !== userId);
+        
+        this.data.servers[guildId].forcedNicknames.push({
+            userId,
+            nickname,
+            originalNickname,
+            expiresAt: Date.now() + (durationMinutes * 60 * 1000)
+        });
+        
+        await this.save();
+    }
+
+    public async removeForcedNickname(guildId: string, userId: string): Promise<string | null> {
+        this.initServerData(guildId);
+        const nickname = this.data.servers[guildId].forcedNicknames.find(n => n.userId === userId);
+        if (nickname) {
+            this.data.servers[guildId].forcedNicknames = this.data.servers[guildId].forcedNicknames.filter(n => n.userId !== userId);
+            await this.save();
+            return nickname.originalNickname;
+        }
+        return null;
+    }
+
+    public async getForcedNicknames(guildId: string): Promise<ForcedNickname[]> {
+        this.initServerData(guildId);
+        return this.data.servers[guildId].forcedNicknames;
+    }
+
+    public async cleanExpiredNicknames(guildId: string): Promise<ForcedNickname[]> {
+        this.initServerData(guildId);
+        const now = Date.now();
+        const expired = this.data.servers[guildId].forcedNicknames.filter(n => n.expiresAt <= now);
+        this.data.servers[guildId].forcedNicknames = this.data.servers[guildId].forcedNicknames.filter(n => n.expiresAt > now);
+        if (expired.length > 0) {
+            await this.save();
+        }
+        return expired;
     }
 } 

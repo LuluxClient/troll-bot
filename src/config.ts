@@ -40,6 +40,10 @@ export const Config = {
         maxDuration: 1200000,   // Durée max du spam (20 mins)
         deleteDelay: 10000       // Délai avant suppression du salon (1 sec)
     },
+    nickus: {
+        maxDuration: 10080, // Temps en minutes (7 jours)
+        minDuration: 1, // Temps en minutes (1 minute)  
+    }
 } as const;
 
 export type ConfigType = typeof Config; 
