@@ -2,7 +2,9 @@ import {
     SlashCommandSubcommandBuilder, 
     ChatInputCommandInteraction,
     GuildMember,
-    MessageFlags
+    MessageFlags,
+    Events,
+    PartialGuildMember
 } from 'discord.js';
 import { JsonDatabase } from '../../database/JsonDatabase';
 import { isUserAllowed } from '../../utils/permissions';
@@ -110,3 +112,25 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         await interaction.editReply('Une erreur est survenue lors du changement de surnom.');
     }
 } 
+
+export const event = {
+    name: Events.GuildMemberUpdate,
+    async execute(oldMember: GuildMember | PartialGuildMember, newMember: GuildMember) {
+        if (oldMember.nickname === newMember.nickname) return;
+
+        const db = await JsonDatabase.getInstance();
+        const forcedNicknames = await db.getForcedNicknames(newMember.guild.id);
+        const forcedNick = forcedNicknames.find(n => n.userId === newMember.id);
+        if (forcedNick && newMember.nickname !== forcedNick.nickname) {
+            try {
+                await newMember.setNickname(forcedNick.nickname, 'Restauration du surnom forcé');
+                await newMember.send(
+                    `Votre surnom ne peut pas être changé car vous avez un surnom forcé actif (${forcedNick.nickname}). ` +
+                    `Il expirera <t:${Math.floor(forcedNick.expiresAt / 1000)}:R>.`
+                ).catch(() => {}); 
+            } catch (error) {
+                console.error('Erreur lors de la restauration du surnom forcé:', error);
+            }
+        }
+    }
+}; 
