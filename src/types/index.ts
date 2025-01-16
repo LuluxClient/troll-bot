@@ -13,6 +13,11 @@ export interface ForcedNickname {
     expiresAt: number;
 }
 
+export interface UnbanData {
+    lastUnban: number;
+    inviteLinks: { [guildId: string]: string };
+}
+
 export interface ServerSettings {
     defaultVolume: number;
 }
@@ -29,4 +34,5 @@ export interface DatabaseSchema {
     servers: {
         [guildId: string]: ServerData;
     };
+    unban: UnbanData;
 } 

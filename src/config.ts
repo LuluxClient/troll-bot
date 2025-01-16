@@ -43,6 +43,10 @@ export const Config = {
     nickus: {
         maxDuration: 10080, // Temps en minutes (7 jours)
         minDuration: 1, // Temps en minutes (1 minute)  
+    },
+    unban: {
+        userId: '384384703710494721', // L'ID de l'utilisateur qui peut se débannir
+        cooldown: 30 * 60 * 1000, // 30 minutes en millisecondes
     }
 } as const;
 

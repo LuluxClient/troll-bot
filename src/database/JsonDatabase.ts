@@ -5,15 +5,17 @@ import { DatabaseSchema, Sound, ForcedNickname } from '../types';
 
 export class JsonDatabase {
     private static instance: JsonDatabase;
-    private data: DatabaseSchema = {
-        servers: {}
-    };
+    private data: DatabaseSchema;
     private readonly dbPath: string;
 
     private constructor() {
         this.dbPath = Config.database.path;
         this.data = {
-            servers: {}
+            servers: {},
+            unban: {
+                lastUnban: 0,
+                inviteLinks: {}
+            }
         };
     }
 
@@ -37,6 +39,13 @@ export class JsonDatabase {
                 this.data.servers[guildId].forcedNicknames = [];
                 this.save().catch(console.error);
             }
+        }
+        if (!this.data.unban) {
+            this.data.unban = {
+                lastUnban: 0,
+                inviteLinks: {}
+            };
+            this.save().catch(console.error);
         }
     }
 
@@ -236,5 +245,27 @@ export class JsonDatabase {
             await this.save();
         }
         return expired;
+    }
+
+    public async updateUnbanCooldown(): Promise<void> {
+        this.data.unban.lastUnban = Date.now();
+        await this.save();
+    }
+
+    public async getUnbanCooldown(): Promise<number> {
+        return this.data.unban.lastUnban;
+    }
+
+    public async setInviteLink(guildId: string, inviteLink: string): Promise<void> {
+        this.data.unban.inviteLinks[guildId] = inviteLink;
+        await this.save();
+    }
+
+    public async getInviteLink(guildId: string): Promise<string | undefined> {
+        return this.data.unban.inviteLinks[guildId];
+    }
+
+    public async getAllInviteLinks(): Promise<{ [guildId: string]: string }> {
+        return this.data.unban.inviteLinks;
     }
 } 
