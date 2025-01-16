@@ -16,6 +16,7 @@ import {
 } from '@discordjs/voice';
 import { JsonDatabase } from '../../database/JsonDatabase';
 import { isUserAllowed } from '../../utils/permissions';
+import { Config } from '../../config';
 
 const movingUsers = new Set<string>();
 
@@ -35,9 +36,9 @@ export const data = new SlashCommandSubcommandBuilder()
     )
     .addNumberOption(option =>
         option.setName('volume')
-            .setDescription('Volume multiplier (0.1 to 10.0)')
-            .setMinValue(0.1)
-            .setMaxValue(5.0)
+            .setDescription('Volume multiplier (' + Config.minVolume + ' to ' + Config.maxVolume + ')')
+            .setMinValue(Config.minVolume)
+            .setMaxValue(Config.maxVolume)
     );
 
 export async function autocomplete(interaction: AutocompleteInteraction) {

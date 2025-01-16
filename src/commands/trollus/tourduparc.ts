@@ -35,8 +35,8 @@ export const data = new SlashCommandSubcommandBuilder()
     )
     .addNumberOption(option =>
         option.setName('volume')
-            .setDescription('Volume du son (0.1 à 10.0)')
-            .setMinValue(0.1)
+            .setDescription('Volume multiplier (' + Config.minVolume + ' to ' + Config.maxVolume + ')')
+            .setMinValue(Config.minVolume)
             .setMaxValue(Config.maxVolume)
     );
 

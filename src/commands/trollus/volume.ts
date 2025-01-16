@@ -8,9 +8,9 @@ export const data = new SlashCommandSubcommandBuilder()
     .setDescription('Set the global volume for all sounds')
     .addNumberOption(option =>
         option.setName('volume')
-            .setDescription('Volume multiplier (0.1 to 10.0)')
+            .setDescription('Volume multiplier (' + Config.minVolume + ' to ' + Config.maxVolume + ')') 
             .setRequired(true)
-            .setMinValue(0.1)
+            .setMinValue(Config.minVolume)
             .setMaxValue(Config.maxVolume)
     );
 

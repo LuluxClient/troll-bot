@@ -10,6 +10,7 @@ export const Config = {
         '0'
     ],
     defaultVolume: 1.0, // Le volume de base, tranquille
+    minVolume: 0.1, // Le volume min pour ne pas déconner
     maxVolume: 10.0, // Le volume max pour péter les oreilles
     soundsPath: './assets/sounds', // Là où on stock les sons
     database: {
