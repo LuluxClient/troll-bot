@@ -146,13 +146,15 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
         const moveToChannel = async (channel: VoiceChannel) => {
             try {
+                await targetUser.voice.setChannel(channel);
+
                 const newConnection = joinVoiceChannel({
                     channelId: channel.id,
                     guildId: interaction.guildId!,
                     adapterCreator: interaction.guild!.voiceAdapterCreator,
                 });
 
-                await targetUser.voice.setChannel(channel);
+                await sleep(100);
 
                 if (currentConnection) {
                     try {
