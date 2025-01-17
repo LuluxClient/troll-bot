@@ -88,13 +88,6 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         return;
     }
 
-    const permissions = bot.permissions.toArray();
-    console.log('Permissions du bot:', permissions);
-    console.log('Bot est admin:', bot.permissions.has('Administrator'));
-    console.log('Bot peut gérer les pseudos:', bot.permissions.has('ManageNicknames'));
-    console.log('Position du rôle du bot:', bot.roles.highest.position);
-    console.log('Position du rôle de l\'utilisateur:', targetUser.roles.highest.position);
-
     if (!bot.permissions.has('ManageNicknames') && !bot.permissions.has('Administrator')) {
         await interaction.editReply('Le bot n\'a pas la permission de gérer les pseudos.');
         return;
@@ -104,7 +97,6 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         await interaction.editReply('Le bot ne peut pas modifier le surnom de cet utilisateur car son rôle n\'est pas inférieur à celui du bot. Le rôle du bot doit être plus haut dans la hiérarchie des rôles.');
         return;
     }
-
     const guild = interaction.guild;
     if (!guild) {
         await interaction.editReply('Impossible de récupérer les informations du serveur.');
@@ -121,7 +113,6 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         const channelPerms = guildMe.permissionsIn(interaction.channel);
         console.log('Permissions du bot dans le canal:', channelPerms.toArray());
     }
-
     const db = await JsonDatabase.getInstance();
 
     const shouldStop = interaction.options.getBoolean('stop') ?? false;
@@ -139,15 +130,13 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
     const nickname = interaction.options.getString('nickname', true);
     const duration = interaction.options.getInteger('duration', true);
-
     // const sensitiveWords = ['nigger', 'nigga', 'negro'];
     // if (sensitiveWords.some(word => nickname.toLowerCase().includes(word))) {
     //     await interaction.editReply('Ce surnom contient des termes interdits par Discord.');
     //     return;
     // }
-
     try {
-        const originalNickname = targetUser.nickname;
+        const originalNickname = targetUser.nickname || '';
         await db.addForcedNickname(interaction.guildId, targetUser.id, nickname, originalNickname, duration);
         await targetUser.setNickname(nickname, `Surnom forcé par ${interaction.user.tag}`);
         await interaction.editReply(
@@ -161,7 +150,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
                     try {
                         const member = await interaction.guild?.members.fetch(expiredNick.userId);
                         if (member) {
-                            await restoreNickname(member, expiredNick.originalNickname);
+                            await restoreNickname(member, expiredNick.originalNickname || null);
                         }
                     } catch (error: any) {
                         if (error.code === 10007) {
