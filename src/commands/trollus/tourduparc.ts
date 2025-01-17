@@ -15,7 +15,9 @@ import {
     createAudioPlayer, 
     createAudioResource,
     AudioPlayerStatus,
-    VoiceConnectionStatus
+    VoiceConnectionStatus,
+    VoiceConnection,
+    AudioPlayer
 } from '@discordjs/voice';
 
 const movingUsers = new Set<string>();
@@ -82,12 +84,6 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         return;
     }
 
-    // const db = await JsonDatabase.getInstance();
-    // if (await db.isUserBlacklisted(interaction.guildId, targetUser.id)) {
-    //     await interaction.editReply('Cet utilisateur est dans la blacklist et ne peut pas être ciblé par cette commande.');
-    //     return;
-    // }
-
     const userKey = `${interaction.guildId}-${targetUser.id}`;
     if (movingUsers.has(userKey)) {
         await interaction.editReply('Cet utilisateur est déjà en train d\'être déplacé.');
@@ -100,7 +96,10 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         return;
     }
 
-    let connection;
+    let currentConnection: VoiceConnection | null = null;
+    let player: AudioPlayer | null = null;
+    let isTouring = false;
+
     try {
         const db = await JsonDatabase.getInstance();
         const soundName = interaction.options.getString('sound', true);
@@ -125,133 +124,123 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         }
 
         movingUsers.add(userKey);
+        isTouring = true;
         await interaction.editReply(`Début du tour du parc pour ${targetUser.displayName}!`);
 
-        connection = joinVoiceChannel({
-            channelId: targetVoiceChannel.id,
-            guildId: interaction.guildId,
-            adapterCreator: interaction.guild!.voiceAdapterCreator,
-        });
-
-        const player = createAudioPlayer();
-        const resource = createAudioResource(sound.filename, {
-            inlineVolume: true
-        });
-        
+        player = createAudioPlayer();
         const volume = interaction.options.getNumber('volume') || Config.maxVolume;
-        resource.volume?.setVolume(volume);
-        connection.subscribe(player);
 
         const createNewResource = () => {
-            const newResource = createAudioResource(sound.filename, {
+            const resource = createAudioResource(sound.filename, {
                 inlineVolume: true
             });
-            newResource.volume?.setVolume(volume);
-            return newResource;
+            resource.volume?.setVolume(volume);
+            return resource;
         };
 
-        let isTouring = true;
         player.on(AudioPlayerStatus.Idle, () => {
-            if (isTouring) {
+            if (isTouring && player) {
                 player.play(createNewResource());
             }
         });
 
-        player.play(resource);
+        const moveToChannel = async (channel: VoiceChannel) => {
+            try {
+                const newConnection = joinVoiceChannel({
+                    channelId: channel.id,
+                    guildId: interaction.guildId!,
+                    adapterCreator: interaction.guild!.voiceAdapterCreator,
+                });
+
+                await targetUser.voice.setChannel(channel);
+
+                if (currentConnection) {
+                    try {
+                        (currentConnection as VoiceConnection).destroy();
+                    } catch (e) {
+                    }
+                }
+
+                currentConnection = newConnection;
+                if (player) {
+                    currentConnection.subscribe(player);
+                }
+            } catch (error) {
+                console.error('Erreur lors du changement de salon:', error);
+                throw error;
+            }
+        };
+
+
+        await moveToChannel(targetVoiceChannel);
+        if (player) {
+            player.play(createNewResource());
+        }
 
         const channelsArray = Array.from(voiceChannels.values());
         let lastChannel: VoiceChannel | null = null;
-        
-        for (let i = 0; i < Config.tourduparcus.moves; i++) {
+        for (let i = 0; i < Config.tourduparcus.moves && isTouring; i++) {
             let availableChannels = channelsArray.filter(channel => 
                 channel.members.size === 0 && 
                 (!lastChannel || channel.id !== lastChannel.id)
             );
 
             if (availableChannels.length === 0) {
-                availableChannels = channelsArray.filter(channel => 
-                    channel.members.size === 0 && 
-                    (!lastChannel || channel.id !== lastChannel.id)
-                );
-                if (availableChannels.length === 0) {
-                    break;
-                }
+                break;
             }
+
             const randomChannel = availableChannels[Math.floor(Math.random() * availableChannels.length)];
             lastChannel = randomChannel;
 
-            const newConnection = joinVoiceChannel({
-                channelId: randomChannel.id,
-                guildId: interaction.guildId,
-                adapterCreator: interaction.guild!.voiceAdapterCreator,
-            });
-
-            await new Promise<void>((resolve) => {
-                const onReady = (oldState: any, newState: any) => {
-                    if (newState.status === VoiceConnectionStatus.Ready) {
-                        newConnection.off('stateChange', onReady);
-                        resolve();
-                    }
-                };
-                
-                newConnection.on('stateChange', onReady);
-                
-                setTimeout(resolve, 1000);
-            });
-
-            await targetUser.voice.setChannel(randomChannel);
-            
-            player.stop();
-            await sleep(100);
-
-            if (connection) {
-                connection.destroy();
-            }
-
-            connection = newConnection;
-            connection.subscribe(player);
-            player.play(createNewResource());
-            
+            await moveToChannel(randomChannel);
             await sleep(Config.tourduparcus.moveDelay);
         }
 
-        await sleep(Config.tourduparcus.finalDelay);
-        
         isTouring = false;
-        player.stop();
-        player.removeAllListeners();
+        await sleep(Config.tourduparcus.finalDelay);
 
-        await sleep(100);
-        
-        try {
-            connection.destroy();
-            await targetUser.voice.setChannel(targetVoiceChannel);
-            
-            movingUsers.delete(userKey);
-            await interaction.editReply(`Tour du parc terminé pour ${targetUser.displayName}!`);
-        } catch (error) {
-            console.error('Erreur lors de la fin du tour du parc:', error);
-
-            movingUsers.delete(userKey);
-            try {
-                connection.destroy();
-                await targetUser.voice.setChannel(targetVoiceChannel);
-            } catch (e) {
-                console.error('Erreur lors du nettoyage final:', e);
-            }
-            await interaction.editReply('Le tour du parc s\'est terminé avec quelques erreurs.');
+        if (player) {
+            player.stop();
+            player.removeAllListeners();
         }
+
+        await moveToChannel(targetVoiceChannel);
+        
+        if (currentConnection) {
+            try {
+                (currentConnection as VoiceConnection).destroy();
+            } catch (e) {
+                console.error('Erreur lors de la destruction de la connexion:', e);
+            }
+        }
+
+        movingUsers.delete(userKey);
+        await interaction.editReply(`Tour du parc terminé pour ${targetUser.displayName}!`);
+
     } catch (error) {
         console.error('Error in tourduparc command:', error);
+        isTouring = false;
         movingUsers.delete(userKey);
-        try {
-            if (connection) {
-                connection.destroy();
+
+        if (player) {
+            player.stop();
+            player.removeAllListeners();
+        }
+
+        if (currentConnection) {
+            try {
+                (currentConnection as VoiceConnection).destroy();
+            } catch (e) {
+                console.error('Erreur lors de la destruction de la connexion:', e);
             }
+        }
+
+        try {
             await targetUser.voice.setChannel(targetVoiceChannel);
         } catch (e) {
-            console.error('Erreur lors du nettoyage d\'urgence:', e);
+            console.error('Erreur lors du retour au salon d\'origine:', e);
         }
+
         await interaction.editReply('Erreur lors de l\'exécution de la commande. Réessayez plus tard.');
     }
 } 
