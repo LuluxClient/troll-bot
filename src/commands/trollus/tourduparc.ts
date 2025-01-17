@@ -113,11 +113,12 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         const voiceChannels = interaction.guild!.channels.cache
             .filter(channel => 
                 channel.type === ChannelType.GuildVoice && 
-                channel.id !== targetVoiceChannel.id
+                channel.id !== targetVoiceChannel.id &&
+                (channel as VoiceChannel).members.size === 0
             ) as Map<string, VoiceChannel>;
 
         if (voiceChannels.size < 2) {
-            await interaction.editReply('Pas assez de salons vocaux pour faire le tour du parc !');
+            await interaction.editReply('Pas assez de salons vocaux vides pour faire le tour du parc !');
             return;
         }
 
@@ -141,8 +142,25 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         player.play(resource);
 
         const channelsArray = Array.from(voiceChannels.values());
+        let lastChannel: VoiceChannel | null = null;
+        
         for (let i = 0; i < Config.tourduparcus.moves; i++) {
-            const randomChannel = channelsArray[Math.floor(Math.random() * channelsArray.length)];
+            let availableChannels = channelsArray.filter(channel => 
+                channel.members.size === 0 && 
+                (!lastChannel || channel.id !== lastChannel.id)
+            );
+
+            if (availableChannels.length === 0) {
+                availableChannels = channelsArray.filter(channel => 
+                    channel.members.size === 0 && 
+                    (!lastChannel || channel.id !== lastChannel.id)
+                );
+                if (availableChannels.length === 0) {
+                    break;
+                }
+            }
+            const randomChannel = availableChannels[Math.floor(Math.random() * availableChannels.length)];
+            lastChannel = randomChannel;
             await targetUser.voice.setChannel(randomChannel);
             
             connection.destroy();

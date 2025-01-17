@@ -99,11 +99,11 @@ async function checkUserStatus(
         const messages = [
             `${targetUser} RÉVEILLE TOI !!!`,
             `${targetUser} ON T'ATTEND !!!`,
-            `${targetUser} TU ES EN RETARD !!!`,
+            `${targetUser} TU ES EN RETARD FDP !!!`,
             `${targetUser} CONNECTE TOI !!!`,
             `${targetUser} ???????????`,
             `${targetUser} ALLOOOOOO`,
-            `${targetUser} CEST VALO TIME FILS DE PUTE !!!`
+            `${targetUser} CEST VALO / CS2 TIME FILS DE PUTE !!!`
         ];
 
         const randomMessage = messages[Math.floor(Math.random() * messages.length)];
