@@ -14,7 +14,8 @@ import {
     joinVoiceChannel, 
     createAudioPlayer, 
     createAudioResource,
-    AudioPlayerStatus
+    AudioPlayerStatus,
+    VoiceConnectionStatus
 } from '@discordjs/voice';
 
 const movingUsers = new Set<string>();
@@ -178,30 +179,50 @@ export async function execute(interaction: ChatInputCommandInteraction) {
             }
             const randomChannel = availableChannels[Math.floor(Math.random() * availableChannels.length)];
             lastChannel = randomChannel;
-            await targetUser.voice.setChannel(randomChannel);
-            
-            connection.destroy();
-            connection = joinVoiceChannel({
+
+            const newConnection = joinVoiceChannel({
                 channelId: randomChannel.id,
                 guildId: interaction.guildId,
                 adapterCreator: interaction.guild!.voiceAdapterCreator,
             });
+
+            await new Promise<void>((resolve) => {
+                const onReady = (oldState: any, newState: any) => {
+                    if (newState.status === VoiceConnectionStatus.Ready) {
+                        newConnection.off('stateChange', onReady);
+                        resolve();
+                    }
+                };
+                
+                newConnection.on('stateChange', onReady);
+                
+                setTimeout(resolve, 1000);
+            });
+
+            await targetUser.voice.setChannel(randomChannel);
+            
+            player.stop();
+            await sleep(100);
+
+            if (connection) {
+                connection.destroy();
+            }
+
+            connection = newConnection;
             connection.subscribe(player);
+            player.play(createNewResource());
             
             await sleep(Config.tourduparcus.moveDelay);
         }
 
         await sleep(Config.tourduparcus.finalDelay);
         
-        // Arrêt propre de l'audio et nettoyage
         isTouring = false;
         player.stop();
         player.removeAllListeners();
-        
-        // Attendre un peu que l'audio soit bien arrêté
+
         await sleep(100);
         
-        // Déconnexion et nettoyage
         try {
             connection.destroy();
             await targetUser.voice.setChannel(targetVoiceChannel);
@@ -210,7 +231,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
             await interaction.editReply(`Tour du parc terminé pour ${targetUser.displayName}!`);
         } catch (error) {
             console.error('Erreur lors de la fin du tour du parc:', error);
-            // Essayer quand même de nettoyer
+
             movingUsers.delete(userKey);
             try {
                 connection.destroy();
