@@ -40,7 +40,7 @@ export const data = new SlashCommandSubcommandBuilder()
 async function restoreNickname(member: GuildMember, originalNickname: string | null): Promise<void> {
     try {
         const bot = member.guild.members.me;
-        if (!bot || !bot.permissions.has('ManageNicknames') || member.roles.highest.position >= bot.roles.highest.position) {
+        if (!bot || !bot.permissions.has('ManageNicknames') || member.roles.highest.position > bot.roles.highest.position) {
             console.warn(`Impossible de restaurer le surnom de ${member.user.tag} : permissions insuffisantes`);
             return;
         }
@@ -92,7 +92,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         return;
     }
 
-    if (targetUser.roles.highest.position >= bot.roles.highest.position) {
+    if (targetUser.roles.highest.position > bot.roles.highest.position) {
         await interaction.editReply('Le bot ne peut pas modifier le surnom de cet utilisateur car son rôle est trop élevé.');
         return;
     }
@@ -157,7 +157,7 @@ export const event = {
 
         try {
             const bot = newMember.guild.members.me;
-            if (!bot || !bot.permissions.has('ManageNicknames') || newMember.roles.highest.position >= bot.roles.highest.position) {
+            if (!bot || !bot.permissions.has('ManageNicknames') || newMember.roles.highest.position > bot.roles.highest.position) {
                 return;
             }
 
