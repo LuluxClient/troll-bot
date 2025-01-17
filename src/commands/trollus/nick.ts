@@ -98,12 +98,24 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         );
 
         setTimeout(async () => {
-            const expired = await db.cleanExpiredNicknames(interaction.guildId!);
-            for (const expiredNick of expired) {
-                const member = await interaction.guild?.members.fetch(expiredNick.userId).catch(() => null);
-                if (member) {
-                    await restoreNickname(member, expiredNick.originalNickname);
+            try {
+                const expired = await db.cleanExpiredNicknames(interaction.guildId!);
+                for (const expiredNick of expired) {
+                    try {
+                        const member = await interaction.guild?.members.fetch(expiredNick.userId);
+                        if (member) {
+                            await restoreNickname(member, expiredNick.originalNickname);
+                        }
+                    } catch (error: any) {
+                        if (error.code === 10007) {
+                            // Le membre n'est plus sur le serveur, on ignore silencieusement
+                            continue;
+                        }
+                        console.error(`Erreur lors de la restauration du surnom pour ${expiredNick.userId}:`, error);
+                    }
                 }
+            } catch (error) {
+                console.error('Erreur lors du nettoyage des surnoms expirés:', error);
             }
         }, duration * 60 * 1000);
 
@@ -118,19 +130,23 @@ export const event = {
     async execute(oldMember: GuildMember | PartialGuildMember, newMember: GuildMember) {
         if (oldMember.nickname === newMember.nickname) return;
 
-        const db = await JsonDatabase.getInstance();
-        const forcedNicknames = await db.getForcedNicknames(newMember.guild.id);
-        const forcedNick = forcedNicknames.find(n => n.userId === newMember.id);
-        if (forcedNick && newMember.nickname !== forcedNick.nickname) {
-            try {
-                await newMember.setNickname(forcedNick.nickname, 'Restauration du surnom forcé');
-                await newMember.send(
-                    `Votre surnom ne peut pas être changé car vous avez un surnom forcé actif (${forcedNick.nickname}). ` +
-                    `Il expirera <t:${Math.floor(forcedNick.expiresAt / 1000)}:R>.`
-                ).catch(() => {}); 
-            } catch (error) {
-                console.error('Erreur lors de la restauration du surnom forcé:', error);
+        try {
+            const db = await JsonDatabase.getInstance();
+            const forcedNicknames = await db.getForcedNicknames(newMember.guild.id);
+            const forcedNick = forcedNicknames.find(n => n.userId === newMember.id);
+            if (forcedNick && newMember.nickname !== forcedNick.nickname) {
+                try {
+                    await newMember.setNickname(forcedNick.nickname, 'Restauration du surnom forcé');
+                    await newMember.send(
+                        `Votre surnom ne peut pas être changé car vous avez un surnom forcé actif (${forcedNick.nickname}). ` +
+                        `Il expirera <t:${Math.floor(forcedNick.expiresAt / 1000)}:R>.`
+                    ).catch(() => {}); 
+                } catch (error) {
+                    console.error('Erreur lors de la restauration du surnom forcé:', error);
+                }
             }
+        } catch (error) {
+            console.error('Erreur lors de la vérification du surnom forcé:', error);
         }
     }
 }; 
