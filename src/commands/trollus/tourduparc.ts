@@ -154,12 +154,22 @@ export async function execute(interaction: ChatInputCommandInteraction) {
                     adapterCreator: interaction.guild!.voiceAdapterCreator,
                 });
 
-                await sleep(100);
+                await new Promise<void>((resolve) => {
+                    const readyHandler = (oldState: any, newState: any) => {
+                        if (newState.status === VoiceConnectionStatus.Ready) {
+                            newConnection.off('stateChange', readyHandler);
+                            resolve();
+                        }
+                    };
+                    newConnection.on('stateChange', readyHandler);
+                    setTimeout(resolve, 1000);
+                });
 
                 if (currentConnection) {
                     try {
-                        (currentConnection as VoiceConnection).destroy();
+                        // (currentConnection as VoiceConnection).destroy();
                     } catch (e) {
+                        console.error('Erreur lors de la destruction de la connexion:', e);
                     }
                 }
 
@@ -173,15 +183,18 @@ export async function execute(interaction: ChatInputCommandInteraction) {
             }
         };
 
+        const channelsArray = Array.from(voiceChannels.values());
+        let lastChannel: VoiceChannel | null = null;
 
-        await moveToChannel(targetVoiceChannel);
+        const firstChannel = channelsArray[Math.floor(Math.random() * channelsArray.length)];
+        lastChannel = firstChannel;
+        await moveToChannel(firstChannel);
+        
         if (player) {
             player.play(createNewResource());
         }
 
-        const channelsArray = Array.from(voiceChannels.values());
-        let lastChannel: VoiceChannel | null = null;
-        for (let i = 0; i < Config.tourduparcus.moves && isTouring; i++) {
+        for (let i = 1; i < Config.tourduparcus.moves && isTouring; i++) {
             let availableChannels = channelsArray.filter(channel => 
                 channel.members.size === 0 && 
                 (!lastChannel || channel.id !== lastChannel.id)
@@ -227,14 +240,6 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         if (player) {
             player.stop();
             player.removeAllListeners();
-        }
-
-        if (currentConnection) {
-            try {
-                (currentConnection as VoiceConnection).destroy();
-            } catch (e) {
-                console.error('Erreur lors de la destruction de la connexion:', e);
-            }
         }
 
         try {
