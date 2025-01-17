@@ -139,6 +139,22 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         const volume = interaction.options.getNumber('volume') || Config.maxVolume;
         resource.volume?.setVolume(volume);
         connection.subscribe(player);
+
+        const createNewResource = () => {
+            const newResource = createAudioResource(sound.filename, {
+                inlineVolume: true
+            });
+            newResource.volume?.setVolume(volume);
+            return newResource;
+        };
+
+        let isTouring = true;
+        player.on(AudioPlayerStatus.Idle, () => {
+            if (isTouring) {
+                player.play(createNewResource());
+            }
+        });
+
         player.play(resource);
 
         const channelsArray = Array.from(voiceChannels.values());
@@ -176,6 +192,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
         await sleep(Config.tourduparcus.finalDelay);
         
+        isTouring = false;
         connection.destroy();
         
         await targetUser.voice.setChannel(targetVoiceChannel);
