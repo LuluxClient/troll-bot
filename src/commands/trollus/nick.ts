@@ -115,6 +115,12 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     const nickname = interaction.options.getString('nickname', true);
     const duration = interaction.options.getInteger('duration', true);
 
+    const sensitiveWords = ['nigger', 'nigga', 'negro'];
+    if (sensitiveWords.some(word => nickname.toLowerCase().includes(word))) {
+        await interaction.editReply('Ce surnom contient des termes interdits par Discord.');
+        return;
+    }
+
     try {
         const originalNickname = targetUser.nickname;
         await db.addForcedNickname(interaction.guildId, targetUser.id, nickname, originalNickname, duration);
