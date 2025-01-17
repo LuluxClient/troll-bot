@@ -1,7 +1,12 @@
-import fs from 'fs/promises';
+import fs from 'fs';
+import { promisify } from 'util';
 import path from 'path';
 import { Config } from '../config';
 import { DatabaseSchema, Sound, ForcedNickname } from '../types';
+
+const writeFileAsync = promisify(fs.writeFile);
+const mkdirAsync = promisify(fs.mkdir);
+const statAsync = promisify(fs.stat);
 
 export class JsonDatabase {
     private static instance: JsonDatabase;
@@ -10,13 +15,39 @@ export class JsonDatabase {
 
     private constructor() {
         this.dbPath = Config.database.path;
-        this.data = {
-            servers: {},
-            unban: {
-                lastUnban: 0,
-                inviteLinks: {}
+        try {
+            if (!fs.existsSync(Config.database.path)) {
+                // Créer le dossier parent s'il n'existe pas
+                const parentDir = path.dirname(Config.database.path);
+                if (!fs.existsSync(parentDir)) {
+                    fs.mkdirSync(parentDir, { recursive: true });
+                }
+
+                this.data = {
+                    servers: {},
+                    unban: {
+                        lastUnban: 0,
+                        inviteLinks: {}
+                    }
+                };
+                this.save().catch(console.error);
+            } else {
+                const fileContent = fs.readFileSync(Config.database.path, 'utf-8');
+                this.data = JSON.parse(fileContent);
+
+                // Initialiser les données manquantes
+                if (!this.data.unban) {
+                    this.data.unban = {
+                        lastUnban: 0,
+                        inviteLinks: {}
+                    };
+                    this.save().catch(console.error);
+                }
             }
-        };
+        } catch (error) {
+            console.error('Error initializing database:', error);
+            throw error;
+        }
     }
 
     private initServerData(guildId: string): void {
@@ -52,39 +83,15 @@ export class JsonDatabase {
     public static async getInstance(): Promise<JsonDatabase> {
         if (!JsonDatabase.instance) {
             JsonDatabase.instance = new JsonDatabase();
-            await JsonDatabase.instance.init();
         }
         return JsonDatabase.instance;
     }
 
-    private async init(): Promise<void> {
-        try {
-            const dir = path.dirname(this.dbPath);
-            await fs.mkdir(dir, { recursive: true });
-            
-            const exists = await fs.access(this.dbPath)
-                .then(() => true)
-                .catch(() => false);
-
-            if (exists) {
-                const content = await fs.readFile(this.dbPath, 'utf-8');
-                this.data = JSON.parse(content);
-            } else {
-                await this.save();
-            }
-        } catch (error) {
-            console.error('Failed to initialize database:', error);
-            throw error;
-        }
-    }
-
     private async save(): Promise<void> {
         try {
-            console.log('[Database] Saving to:', this.dbPath);
-            await fs.writeFile(this.dbPath, JSON.stringify(this.data, null, 2));
-            console.log('[Database] Save successful');
+            await writeFileAsync(this.dbPath, JSON.stringify(this.data, null, 2));
         } catch (error) {
-            console.error('[Database] Save failed:', error);
+            console.error('Error saving database:', error);
             throw error;
         }
     }
@@ -154,7 +161,7 @@ export class JsonDatabase {
         let totalSize = 0;
         for (const sound of this.data.servers[guildId].sounds) {
             try {
-                const stats = await fs.stat(sound.filename);
+                const stats = await statAsync(sound.filename);
                 totalSize += stats.size;
             } catch (error) {
                 console.error(`Failed to get size for ${sound.filename}:`, error);
@@ -212,6 +219,7 @@ export class JsonDatabase {
         
         this.data.servers[guildId].forcedNicknames.push({
             userId,
+            guildId,
             nickname,
             originalNickname,
             expiresAt: Date.now() + (durationMinutes * 60 * 1000)
@@ -268,4 +276,4 @@ export class JsonDatabase {
     public async getAllInviteLinks(): Promise<{ [guildId: string]: string }> {
         return this.data.unban.inviteLinks;
     }
-} 
+}

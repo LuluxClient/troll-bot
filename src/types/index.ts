@@ -1,3 +1,21 @@
+export interface DatabaseSchema {
+    servers: { [guildId: string]: ServerData };
+    unban: {
+        lastUnban: number;
+        inviteLinks: { [guildId: string]: string };
+    };
+}
+
+export interface ServerData {
+    sounds: Sound[];
+    allowedUsers: string[];
+    blacklist: string[];
+    settings: {
+        defaultVolume: number;
+    };
+    forcedNicknames: ForcedNickname[];
+}
+
 export interface Sound {
     id: string;
     title: string;
@@ -8,31 +26,8 @@ export interface Sound {
 
 export interface ForcedNickname {
     userId: string;
+    guildId: string;
     nickname: string;
     originalNickname: string | null;
     expiresAt: number;
 }
-
-export interface UnbanData {
-    lastUnban: number;
-    inviteLinks: { [guildId: string]: string };
-}
-
-export interface ServerSettings {
-    defaultVolume: number;
-}
-
-export interface ServerData {
-    sounds: Sound[];
-    allowedUsers: string[];
-    blacklist: string[];
-    forcedNicknames: ForcedNickname[];
-    settings: ServerSettings;
-}
-
-export interface DatabaseSchema {
-    servers: {
-        [guildId: string]: ServerData;
-    };
-    unban: UnbanData;
-} 

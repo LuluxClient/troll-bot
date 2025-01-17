@@ -10,6 +10,9 @@
   "dependencies": {
     "@discordjs/opus": "^0.9.0",
     "@discordjs/voice": "^0.18.0",
+    "axios": "^1.7.9",
+    "canvas": "^3.0.1",
+    "chart.js": "^4.4.7",
     "discord.js": "^14.11.0",
     "dotenv": "^16.0.3",
     "sodium-native": "^4.3.1",

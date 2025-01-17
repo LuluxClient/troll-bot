@@ -1,3 +1,6 @@
+import { config } from 'dotenv';
+config(); // Charger les variables d'environnement
+
 export const Config = {
     allowedUsers: [ // Les boss qui peuvent tout faire
         '252454259252002826',
@@ -47,7 +50,7 @@ export const Config = {
     unban: {
         userId: '384384703710494721', // L'ID de l'utilisateur qui peut se débannir
         cooldown: 30 * 60 * 1000, // 30 minutes en millisecondes
-    }
+    },
 } as const;
 
 export type ConfigType = typeof Config; 
