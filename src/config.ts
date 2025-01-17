@@ -36,8 +36,8 @@ export const Config = {
     tourduparcus: {
 
         moves: 10,          // Combien de fois on fait bouger le mec
-        moveDelay: 2000,     // Le temps entre chaque move (en ms)
-        finalDelay: 1500    // Le temps avant de le ramener (histoire qu'il comprenne ce qui lui arrive)
+        moveDelay: 1500,     // Le temps entre chaque move (en ms)
+        finalDelay: 2000    // Le temps avant de le ramener (histoire qu'il comprenne ce qui lui arrive)
     },
     retardus: {
         messageDelay: 2500,     // Délai entre chaque message de spam (2.5 sec)
