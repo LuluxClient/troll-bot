@@ -39,13 +39,23 @@ export const data = new SlashCommandSubcommandBuilder()
 
 async function restoreNickname(member: GuildMember, originalNickname: string | null): Promise<void> {
     try {
+        const bot = member.guild.members.me;
+        if (!bot || !bot.permissions.has('ManageNicknames') || member.roles.highest.position >= bot.roles.highest.position) {
+            console.warn(`Impossible de restaurer le surnom de ${member.user.tag} : permissions insuffisantes`);
+            return;
+        }
+
         if (originalNickname === null) {
             await member.setNickname('');
         } else {
             await member.setNickname(originalNickname);
         }
-    } catch (error) {
-        console.error('Erreur lors de la restauration du surnom:', error);
+    } catch (error: any) {
+        if (error.code === 50013) {
+            console.warn(`Impossible de restaurer le surnom de ${member.user.tag} : permissions insuffisantes`);
+        } else {
+            console.error('Erreur lors de la restauration du surnom:', error);
+        }
     }
 }
 
@@ -68,6 +78,22 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     const targetUser = interaction.options.getMember('user');
     if (!(targetUser instanceof GuildMember)) {
         await interaction.editReply('Utilisateur invalide.');
+        return;
+    }
+
+    const bot = interaction.guild?.members.me;
+    if (!bot) {
+        await interaction.editReply('Une erreur est survenue lors de la récupération des informations du bot.');
+        return;
+    }
+
+    if (!bot.permissions.has('ManageNicknames')) {
+        await interaction.editReply('Le bot n\'a pas la permission de gérer les pseudos.');
+        return;
+    }
+
+    if (targetUser.roles.highest.position >= bot.roles.highest.position) {
+        await interaction.editReply('Le bot ne peut pas modifier le surnom de cet utilisateur car son rôle est trop élevé.');
         return;
     }
 
@@ -108,7 +134,6 @@ export async function execute(interaction: ChatInputCommandInteraction) {
                         }
                     } catch (error: any) {
                         if (error.code === 10007) {
-                            // Le membre n'est plus sur le serveur, on ignore silencieusement
                             continue;
                         }
                         console.error(`Erreur lors de la restauration du surnom pour ${expiredNick.userId}:`, error);
@@ -131,6 +156,11 @@ export const event = {
         if (oldMember.nickname === newMember.nickname) return;
 
         try {
+            const bot = newMember.guild.members.me;
+            if (!bot || !bot.permissions.has('ManageNicknames') || newMember.roles.highest.position >= bot.roles.highest.position) {
+                return;
+            }
+
             const db = await JsonDatabase.getInstance();
             const forcedNicknames = await db.getForcedNicknames(newMember.guild.id);
             const forcedNick = forcedNicknames.find(n => n.userId === newMember.id);
