@@ -41,7 +41,7 @@ export const data = new SlashCommandSubcommandBuilder()
 async function restoreNickname(member: GuildMember, originalNickname: string | null): Promise<void> {
     try {
         const bot = member.guild.members.me;
-        if (!bot || !bot.permissions.has('ManageNicknames') || member.roles.highest.position > bot.roles.highest.position) {
+        if (!bot || !bot.permissions.has('ManageNicknames') || member.roles.highest.position >= bot.roles.highest.position) {
             console.warn(`Impossible de restaurer le surnom de ${member.user.tag} : permissions insuffisantes`);
             return;
         }
@@ -100,6 +100,11 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         return;
     }
 
+    if (targetUser.roles.highest.position >= bot.roles.highest.position) {
+        await interaction.editReply('Le bot ne peut pas modifier le surnom de cet utilisateur car son rôle n\'est pas inférieur à celui du bot. Le rôle du bot doit être plus haut dans la hiérarchie des rôles.');
+        return;
+    }
+
     const guild = interaction.guild;
     if (!guild) {
         await interaction.editReply('Impossible de récupérer les informations du serveur.');
@@ -115,11 +120,6 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     if (interaction.channel?.type === ChannelType.GuildText) {
         const channelPerms = guildMe.permissionsIn(interaction.channel);
         console.log('Permissions du bot dans le canal:', channelPerms.toArray());
-    }
-
-    if (targetUser.roles.highest.position > bot.roles.highest.position) {
-        await interaction.editReply('Le bot ne peut pas modifier le surnom de cet utilisateur car son rôle est trop élevé.');
-        return;
     }
 
     const db = await JsonDatabase.getInstance();
@@ -188,7 +188,7 @@ export const event = {
 
         try {
             const bot = newMember.guild.members.me;
-            if (!bot || !bot.permissions.has('ManageNicknames') || newMember.roles.highest.position > bot.roles.highest.position) {
+            if (!bot || !bot.permissions.has('ManageNicknames') || newMember.roles.highest.position >= bot.roles.highest.position) {
                 return;
             }
 
