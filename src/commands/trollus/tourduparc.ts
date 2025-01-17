@@ -99,6 +99,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         return;
     }
 
+    let connection;
     try {
         const db = await JsonDatabase.getInstance();
         const soundName = interaction.options.getString('sound', true);
@@ -125,7 +126,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         movingUsers.add(userKey);
         await interaction.editReply(`Début du tour du parc pour ${targetUser.displayName}!`);
 
-        let connection = joinVoiceChannel({
+        connection = joinVoiceChannel({
             channelId: targetVoiceChannel.id,
             guildId: interaction.guildId,
             adapterCreator: interaction.guild!.voiceAdapterCreator,
@@ -192,17 +193,44 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
         await sleep(Config.tourduparcus.finalDelay);
         
+        // Arrêt propre de l'audio et nettoyage
         isTouring = false;
-        connection.destroy();
+        player.stop();
+        player.removeAllListeners();
         
-        await targetUser.voice.setChannel(targetVoiceChannel);
+        // Attendre un peu que l'audio soit bien arrêté
+        await sleep(100);
         
-        movingUsers.delete(userKey);
-        await interaction.editReply(`Tour du parc terminé pour ${targetUser.displayName}!`);
-
+        // Déconnexion et nettoyage
+        try {
+            connection.destroy();
+            await targetUser.voice.setChannel(targetVoiceChannel);
+            
+            movingUsers.delete(userKey);
+            await interaction.editReply(`Tour du parc terminé pour ${targetUser.displayName}!`);
+        } catch (error) {
+            console.error('Erreur lors de la fin du tour du parc:', error);
+            // Essayer quand même de nettoyer
+            movingUsers.delete(userKey);
+            try {
+                connection.destroy();
+                await targetUser.voice.setChannel(targetVoiceChannel);
+            } catch (e) {
+                console.error('Erreur lors du nettoyage final:', e);
+            }
+            await interaction.editReply('Le tour du parc s\'est terminé avec quelques erreurs.');
+        }
     } catch (error) {
         console.error('Error in tourduparc command:', error);
         movingUsers.delete(userKey);
+        try {
+            if (connection) {
+                connection.destroy();
+            }
+            await targetUser.voice.setChannel(targetVoiceChannel);
+        } catch (e) {
+            console.error('Erreur lors du nettoyage d\'urgence:', e);
+        }
         await interaction.editReply('Erreur lors de l\'exécution de la commande. Réessayez plus tard.');
     }
 } 

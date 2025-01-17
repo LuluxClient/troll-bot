@@ -159,6 +159,9 @@ export async function execute(interaction: ChatInputCommandInteraction) {
                         console.error(`Erreur lors de la restauration du surnom pour ${expiredNick.userId}:`, error);
                     }
                 }
+                if (expired.length > 0) {
+                    global.gc?.();
+                }
             } catch (error) {
                 console.error('Erreur lors du nettoyage des surnoms expirés:', error);
             }
@@ -170,33 +173,77 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     }
 } 
 
-export const event = {
-    name: Events.GuildMemberUpdate,
-    async execute(oldMember: GuildMember | PartialGuildMember, newMember: GuildMember) {
-        if (oldMember.nickname === newMember.nickname) return;
+export const events = [
+    {
+        name: Events.GuildMemberUpdate,
+        async execute(oldMember: GuildMember | PartialGuildMember, newMember: GuildMember) {
+            if (oldMember.nickname === newMember.nickname) return;
 
-        try {
-            const bot = newMember.guild.members.me;
-            if (!bot || !bot.permissions.has('ManageNicknames') || newMember.roles.highest.position >= bot.roles.highest.position) {
-                return;
-            }
-
-            const db = await JsonDatabase.getInstance();
-            const forcedNicknames = await db.getForcedNicknames(newMember.guild.id);
-            const forcedNick = forcedNicknames.find(n => n.userId === newMember.id);
-            if (forcedNick && newMember.nickname !== forcedNick.nickname) {
-                try {
-                    await newMember.setNickname(forcedNick.nickname, 'Restauration du surnom forcé');
-                    await newMember.send(
-                        `Votre surnom ne peut pas être changé car vous avez un surnom forcé actif (${forcedNick.nickname}). ` +
-                        `Il expirera <t:${Math.floor(forcedNick.expiresAt / 1000)}:R>.`
-                    ).catch(() => {}); 
-                } catch (error) {
-                    console.error('Erreur lors de la restauration du surnom forcé:', error);
+            try {
+                const bot = newMember.guild.members.me;
+                if (!bot || !bot.permissions.has('ManageNicknames') || newMember.roles.highest.position >= bot.roles.highest.position) {
+                    return;
                 }
+
+                const db = await JsonDatabase.getInstance();
+                const forcedNicknames = await db.getForcedNicknames(newMember.guild.id);
+                const forcedNick = forcedNicknames.find(n => n.userId === newMember.id);
+                
+                if (forcedNick) {
+                    if (Date.now() >= forcedNick.expiresAt) {
+                        await db.removeForcedNickname(newMember.guild.id, newMember.id);
+                        return;
+                    }
+
+                    if (newMember.nickname !== forcedNick.nickname) {
+                        try {
+                            await newMember.setNickname(forcedNick.nickname, 'Restauration du surnom forcé');
+                            await newMember.send(
+                                `Votre surnom ne peut pas être changé car vous avez un surnom forcé actif (${forcedNick.nickname}). ` +
+                                `Il expirera <t:${Math.floor(forcedNick.expiresAt / 1000)}:R>.`
+                            ).catch(() => {}); 
+                        } catch (error) {
+                            console.error('Erreur lors de la restauration du surnom forcé:', error);
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Erreur lors de la vérification du surnom forcé:', error);
             }
-        } catch (error) {
-            console.error('Erreur lors de la vérification du surnom forcé:', error);
+        }
+    },
+    {
+        name: Events.GuildMemberAdd,
+        async execute(member: GuildMember) {
+            try {
+                const bot = member.guild.members.me;
+                if (!bot || !bot.permissions.has('ManageNicknames') || member.roles.highest.position >= bot.roles.highest.position) {
+                    return;
+                }
+
+                const db = await JsonDatabase.getInstance();
+                const forcedNicknames = await db.getForcedNicknames(member.guild.id);
+                const forcedNick = forcedNicknames.find(n => n.userId === member.id);
+
+                if (forcedNick) {
+                    if (Date.now() >= forcedNick.expiresAt) {
+                        await db.removeForcedNickname(member.guild.id, member.id);
+                        return;
+                    }
+
+                    try {
+                        await member.setNickname(forcedNick.nickname, 'Restauration du surnom forcé après retour');
+                        await member.send(
+                            `Votre surnom forcé (${forcedNick.nickname}) a été restauré car il est toujours actif. ` +
+                            `Il expirera <t:${Math.floor(forcedNick.expiresAt / 1000)}:R>.`
+                        ).catch(() => {});
+                    } catch (error) {
+                        console.error('Erreur lors de la restauration du surnom forcé après retour:', error);
+                    }
+                }
+            } catch (error) {
+                console.error('Erreur lors de la vérification du surnom forcé après retour:', error);
+            }
         }
     }
-}; 
+]; 
