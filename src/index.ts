@@ -1,8 +1,9 @@
-import { Client, Events, GatewayIntentBits, MessageFlags } from 'discord.js';
+import { Client, Events, GatewayIntentBits, MessageFlags, GuildMember, PartialGuildMember } from 'discord.js';
 import { config } from 'dotenv';
 import * as commandModules from './commands';
 import * as guildMemberUpdate from './commands/trollus/nick';
 import * as messageCreate from './events/messageCreate';
+import * as guildMemberAdd from './events/guildMemberAdd';
 
 config();
 
@@ -21,7 +22,10 @@ client.once(Events.ClientReady, () => {
     console.log('Bot is ready!');
 });
 
-client.on(Events.GuildMemberUpdate, (...args) => guildMemberUpdate.event.execute(...args));
+// Register member update event
+client.on(Events.GuildMemberUpdate, (...args) => guildMemberUpdate.events[0].execute(...args));
+client.on(Events.GuildMemberAdd, member => guildMemberAdd.event.execute(member));
+
 client.on(Events.MessageCreate, message => messageCreate.event.execute(message));
 
 client.on(Events.InteractionCreate, async interaction => {
