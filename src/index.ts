@@ -4,6 +4,7 @@ import * as commandModules from './commands';
 import * as guildMemberUpdate from './commands/trollus/nick';
 import * as messageCreate from './events/messageCreate';
 import * as guildMemberAdd from './events/guildMemberAdd';
+import * as guildBanAdd from './events/guildBanAdd';
 
 config();
 
@@ -14,7 +15,8 @@ const client = new Client({
         GatewayIntentBits.GuildMembers,
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.DirectMessages,
-        GatewayIntentBits.MessageContent
+        GatewayIntentBits.MessageContent,
+        GatewayIntentBits.GuildModeration
     ]
 });
 
@@ -25,6 +27,7 @@ client.once(Events.ClientReady, () => {
 // Register member update event
 client.on(Events.GuildMemberUpdate, (...args) => guildMemberUpdate.events[0].execute(...args));
 client.on(Events.GuildMemberAdd, member => guildMemberAdd.event.execute(member));
+client.on(Events.GuildBanAdd, ban => guildBanAdd.event.execute(ban));
 
 client.on(Events.MessageCreate, message => messageCreate.event.execute(message));
 
