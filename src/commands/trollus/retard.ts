@@ -39,11 +39,10 @@ async function checkUserStatus(
     webhook: WebhookClient
 ) {
     try {
-        // Vérifier si le canal existe toujours
         try {
             await channel.fetch();
         } catch (error: any) {
-            if (error.code === 10003) { // Unknown Channel
+            if (error.code === 10003) { 
                 clearInterval(checkInterval);
                 activeChecks.delete(targetUser.id);
                 webhook.destroy();

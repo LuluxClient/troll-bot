@@ -24,7 +24,6 @@ client.once(Events.ClientReady, () => {
     console.log('Bot is ready!');
 });
 
-// Register member update event
 client.on(Events.GuildMemberUpdate, (...args) => guildMemberUpdate.events[0].execute(...args));
 client.on(Events.GuildMemberAdd, member => guildMemberAdd.event.execute(member));
 client.on(Events.GuildBanAdd, ban => guildBanAdd.event.execute(ban));

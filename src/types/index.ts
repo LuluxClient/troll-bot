@@ -25,9 +25,10 @@ export interface Sound {
 }
 
 export interface ForcedNickname {
-    userId: string;
     guildId: string;
+    userId: string;
     nickname: string;
     originalNickname: string | null;
     expiresAt: number;
+    forcedBy: string;
 }

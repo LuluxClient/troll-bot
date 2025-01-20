@@ -117,14 +117,34 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
     const shouldStop = interaction.options.getBoolean('stop') ?? false;
     if (shouldStop) {
-        const originalNickname = await db.removeForcedNickname(interaction.guildId, targetUser.id);
-        if (originalNickname === null) {
+        const forcedNick = (await db.getForcedNicknames(interaction.guildId)).find(n => n.userId === targetUser.id);
+        if (!forcedNick) {
             await interaction.editReply('Cet utilisateur n\'a pas de surnom forcé actif.');
             return;
         }
 
+        if (forcedNick.forcedBy !== interaction.user.id) {
+            await interaction.editReply('Seule la personne ayant forcé le surnom peut le retirer.');
+            return;
+        }
+
+        const originalNickname = await db.removeForcedNickname(interaction.guildId, targetUser.id);
+        // if (originalNickname === null) {
+        //     await interaction.editReply('Cet utilisateur n\'a pas de surnom forcé actif.');
+        //     return;
+        // }
+
         await restoreNickname(targetUser, originalNickname);
         await interaction.editReply(`Le surnom forcé de ${targetUser.user.username} a été supprimé.`);
+        return;
+    }
+
+    const existingNick = (await db.getForcedNicknames(interaction.guildId)).find(n => n.userId === targetUser.id);
+    if (existingNick) {
+        await interaction.editReply(
+            `${targetUser.user.username} a déjà un surnom forcé (${existingNick.nickname}) par <@${existingNick.forcedBy}>. ` +
+            `Il expirera <t:${Math.floor(existingNick.expiresAt / 1000)}:R>.`
+        );
         return;
     }
 
@@ -137,7 +157,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     // }
     try {
         const originalNickname = targetUser.nickname || '';
-        await db.addForcedNickname(interaction.guildId, targetUser.id, nickname, originalNickname, duration);
+        await db.addForcedNickname(interaction.guildId, targetUser.id, nickname, originalNickname, duration, interaction.user.id);
         await targetUser.setNickname(nickname, `Surnom forcé par ${interaction.user.tag}`);
         await interaction.editReply(
             `Le surnom de ${targetUser.user.username} a été changé en "${nickname}" pour ${duration} minute${duration > 1 ? 's' : ''}.`

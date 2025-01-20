@@ -205,7 +205,7 @@ export class JsonDatabase {
         return blacklist.includes(userId);
     }
 
-    public async addForcedNickname(guildId: string, userId: string, nickname: string, originalNickname: string | null, durationMinutes: number): Promise<void> {
+    public async addForcedNickname(guildId: string, userId: string, nickname: string, originalNickname: string | null, durationMinutes: number, forcedBy: string): Promise<void> {
         this.initServerData(guildId);
         
         this.data.servers[guildId].forcedNicknames = this.data.servers[guildId].forcedNicknames.filter(n => n.userId !== userId);
@@ -215,7 +215,8 @@ export class JsonDatabase {
             userId,
             nickname,
             originalNickname,
-            expiresAt: Date.now() + (durationMinutes * 60 * 1000)
+            expiresAt: Date.now() + (durationMinutes * 60 * 1000),
+            forcedBy
         });
         
         await this.save();
