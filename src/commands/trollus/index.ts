@@ -11,6 +11,7 @@ import * as tourduparc from './tourduparc';
 import * as retard from './retard';
 import * as blacklist from './blacklist';
 import * as nick from './nick';
+import * as factchecker from './factchecker';
 
 export const trollus = {
     data: new SlashCommandBuilder()
@@ -27,7 +28,8 @@ export const trollus = {
         .addSubcommand(tourduparc.data)
         .addSubcommand(retard.data)
         .addSubcommand(blacklist.data)
-        .addSubcommand(nick.data),
+        .addSubcommand(nick.data)
+        .addSubcommand(factchecker.data),
 
     async execute(interaction: ChatInputCommandInteraction) {
         const subcommand = interaction.options.getSubcommand();
@@ -57,6 +59,8 @@ export const trollus = {
                 return blacklist.execute(interaction);
             case 'nickus':
                 return nick.execute(interaction);
+            case 'factcheckerus':
+                return factchecker.execute(interaction);
         }
     },
 

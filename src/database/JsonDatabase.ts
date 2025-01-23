@@ -1,7 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { Config } from '../config';
-import { DatabaseSchema, Sound, ForcedNickname } from '../types';
+import { DatabaseSchema, Sound, ForcedNickname, FactCheckStats } from '../types';
 
 export class JsonDatabase {
     private static instance: JsonDatabase;
@@ -26,6 +26,10 @@ export class JsonDatabase {
                 allowedUsers: [],
                 blacklist: [],
                 forcedNicknames: [],
+                factCheckUsers: [],
+                factCheckEnabled: {},
+                factCheckGlobalEnabled: true,
+                factCheckStats: {},
                 settings: {
                     defaultVolume: Config.defaultVolume
                 }
@@ -37,6 +41,22 @@ export class JsonDatabase {
             }
             if (!this.data.servers[guildId].forcedNicknames) {
                 this.data.servers[guildId].forcedNicknames = [];
+                this.save().catch(console.error);
+            }
+            if (!this.data.servers[guildId].factCheckUsers) {
+                this.data.servers[guildId].factCheckUsers = [];
+                this.save().catch(console.error);
+            }
+            if (!this.data.servers[guildId].factCheckEnabled) {
+                this.data.servers[guildId].factCheckEnabled = {};
+                this.save().catch(console.error);
+            }
+            if (typeof this.data.servers[guildId].factCheckGlobalEnabled !== 'boolean') {
+                this.data.servers[guildId].factCheckGlobalEnabled = true;
+                this.save().catch(console.error);
+            }
+            if (!this.data.servers[guildId].factCheckStats) {
+                this.data.servers[guildId].factCheckStats = {};
                 this.save().catch(console.error);
             }
         }
@@ -269,5 +289,106 @@ export class JsonDatabase {
 
     public async getAllInviteLinks(): Promise<{ [guildId: string]: string }> {
         return this.data.unban.inviteLinks;
+    }
+
+    public async addFactCheckUser(guildId: string, userId: string): Promise<void> {
+        this.initServerData(guildId);
+        if (!this.data.servers[guildId].factCheckUsers) {
+            this.data.servers[guildId].factCheckUsers = [];
+        }
+        if (!this.data.servers[guildId].factCheckEnabled) {
+            this.data.servers[guildId].factCheckEnabled = {};
+        }
+        if (!this.data.servers[guildId].factCheckUsers.includes(userId)) {
+            this.data.servers[guildId].factCheckUsers.push(userId);
+            await this.save();
+        }
+    }
+
+    public async removeFactCheckUser(guildId: string, userId: string): Promise<void> {
+        this.initServerData(guildId);
+        if (!this.data.servers[guildId].factCheckUsers) {
+            this.data.servers[guildId].factCheckUsers = [];
+        }
+        if (!this.data.servers[guildId].factCheckEnabled) {
+            this.data.servers[guildId].factCheckEnabled = {};
+        }
+        this.data.servers[guildId].factCheckUsers = this.data.servers[guildId].factCheckUsers.filter(id => id !== userId);
+        delete this.data.servers[guildId].factCheckEnabled[userId];
+        await this.save();
+    }
+
+    public async setFactCheckEnabled(guildId: string, userId: string, enabled: boolean): Promise<void> {
+        this.initServerData(guildId);
+        if (!this.data.servers[guildId].factCheckEnabled) {
+            this.data.servers[guildId].factCheckEnabled = {};
+        }
+        this.data.servers[guildId].factCheckEnabled[userId] = enabled;
+        await this.save();
+    }
+
+    public async isFactCheckEnabled(guildId: string, userId: string): Promise<boolean> {
+        this.initServerData(guildId);
+        if (!this.data.servers[guildId].factCheckEnabled) {
+            this.data.servers[guildId].factCheckEnabled = {};
+        }
+        return this.data.servers[guildId].factCheckEnabled[userId] ?? false;
+    }
+
+    public async getFactCheckUsers(guildId: string): Promise<string[]> {
+        this.initServerData(guildId);
+        if (!this.data.servers[guildId].factCheckUsers) {
+            this.data.servers[guildId].factCheckUsers = [];
+            await this.save();
+        }
+        return this.data.servers[guildId].factCheckUsers;
+    }
+
+    public async isUserFactChecked(guildId: string, userId: string): Promise<boolean> {
+        this.initServerData(guildId);
+        if (!this.data.servers[guildId].factCheckUsers) {
+            this.data.servers[guildId].factCheckUsers = [];
+            await this.save();
+        }
+        return this.data.servers[guildId].factCheckUsers.includes(userId) && 
+               this.data.servers[guildId].factCheckGlobalEnabled;
+    }
+
+    public async setFactCheckGlobalEnabled(guildId: string, enabled: boolean): Promise<void> {
+        this.initServerData(guildId);
+        this.data.servers[guildId].factCheckGlobalEnabled = enabled;
+        await this.save();
+    }
+
+    public async isFactCheckGlobalEnabled(guildId: string): Promise<boolean> {
+        this.initServerData(guildId);
+        return this.data.servers[guildId].factCheckGlobalEnabled ?? true;
+    }
+
+    public async updateFactCheckStats(guildId: string, userId: string, wasCorrect: boolean): Promise<void> {
+        this.initServerData(guildId);
+        if (!this.data.servers[guildId].factCheckStats[userId]) {
+            this.data.servers[guildId].factCheckStats[userId] = {
+                totalChecks: 0,
+                correctCount: 0,
+                incorrectCount: 0,
+                lastChecked: Date.now()
+            };
+        }
+
+        const stats = this.data.servers[guildId].factCheckStats[userId];
+        stats.totalChecks++;
+        if (wasCorrect) {
+            stats.correctCount++;
+        } else {
+            stats.incorrectCount++;
+        }
+        stats.lastChecked = Date.now();
+        await this.save();
+    }
+
+    public async getFactCheckStats(guildId: string, userId: string): Promise<FactCheckStats | null> {
+        this.initServerData(guildId);
+        return this.data.servers[guildId].factCheckStats[userId] || null;
     }
 } 

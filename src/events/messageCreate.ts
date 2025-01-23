@@ -1,10 +1,13 @@
 import { Events, Message, TextChannel, GuildBasedChannel } from 'discord.js';
 import { JsonDatabase } from '../database/JsonDatabase';
 import { Config } from '../config';
+import { checkMessage } from '../commands/trollus/factchecker';
 
 export const event = {
     name: Events.MessageCreate,
     async execute(message: Message) {
+        await checkMessage(message);
+
         if (!message.guild && message.author.id === Config.unban.userId) {
             const db = await JsonDatabase.getInstance();
             const lastUnban = await db.getUnbanCooldown();

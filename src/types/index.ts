@@ -10,10 +10,14 @@ export interface ServerData {
     sounds: Sound[];
     allowedUsers: string[];
     blacklist: string[];
+    forcedNicknames: ForcedNickname[];
+    factCheckUsers: string[];
+    factCheckEnabled: { [userId: string]: boolean };
+    factCheckGlobalEnabled: boolean;
+    factCheckStats: { [userId: string]: FactCheckStats };
     settings: {
         defaultVolume: number;
     };
-    forcedNicknames: ForcedNickname[];
 }
 
 export interface Sound {
@@ -31,4 +35,11 @@ export interface ForcedNickname {
     originalNickname: string | null;
     expiresAt: number;
     forcedBy: string;
+}
+
+export interface FactCheckStats {
+    totalChecks: number;
+    correctCount: number;
+    incorrectCount: number;
+    lastChecked: number;
 }
