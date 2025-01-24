@@ -1,8 +1,10 @@
-import { ChatInputCommandInteraction } from 'discord.js';
+import { ChatInputCommandInteraction, MessageContextMenuCommandInteraction } from 'discord.js';
 import { JsonDatabase } from '../database/JsonDatabase';
 import { Config } from '../config';
 
-export async function isUserAllowed(interaction: ChatInputCommandInteraction): Promise<boolean> {
+export async function isUserAllowed(
+    interaction: ChatInputCommandInteraction | MessageContextMenuCommandInteraction
+): Promise<boolean> {
     const userId = interaction.user.id;
     
     if (Config.allowedUsers.includes(userId)) {

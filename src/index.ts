@@ -5,6 +5,7 @@ import * as guildMemberUpdate from './commands/trollus/nick';
 import * as messageCreate from './events/messageCreate';
 import * as guildMemberAdd from './events/guildMemberAdd';
 import * as guildBanAdd from './events/guildBanAdd';
+import { contextMenuCommands } from './applications';
 
 config();
 
@@ -38,6 +39,18 @@ client.on(Events.InteractionCreate, async interaction => {
             if (command?.handleAutocomplete) {
                 await command.handleAutocomplete(interaction);
             }
+            return;
+        }
+
+        // Handle context menu commands
+        if (interaction.isMessageContextMenuCommand()) {
+            console.log(`[DEBUG] Context menu command received: ${interaction.commandName}`);
+            const command = contextMenuCommands.find(cmd => cmd.data.name === interaction.commandName);
+            if (!command) {
+                console.log(`[DEBUG] Context menu command not found: ${interaction.commandName}`);
+                return;
+            }
+            await command.execute(interaction);
             return;
         }
 

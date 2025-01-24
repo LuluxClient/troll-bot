@@ -3,12 +3,16 @@ import {
     ChatInputCommandInteraction,
     GuildMember,
     PermissionsBitField,
-    EmbedBuilder
+    EmbedBuilder,
+    ApplicationCommandType,
+    MessageContextMenuCommandInteraction,
+    ContextMenuCommandBuilder
 } from 'discord.js';
 import { Configuration, OpenAIApi } from 'openai';
 import { isUserAllowed } from '../../utils/permissions';
 import { JsonDatabase } from '../../database/JsonDatabase';
 import NodeCache from 'node-cache';
+import { Config } from '../../config';
 
 const configuration = new Configuration({
     apiKey: process.env.OPENAI_API_KEY,
@@ -22,22 +26,8 @@ const messageCache = new NodeCache({
     maxKeys: 1000
 });
 
-const SYSTEM_PROMPT = `Vous êtes un assistant de fact-checking spécialisé en histoire et en politique, conçu pour être précis et économe en tokens.
-
-Analysez le message et répondez selon ce format :
-1. Si l'information est correcte : {"factCheck": "CORRECT"}
-2. Si l'information est fausse : {"factCheck": "FAUX", "reason": "explication concise", "source": "source vérifiable", "url": "lien vers la source"}
-3. Si non vérifiable : {"factCheck": "NON VERIFIABLE", "reason": "explication brève"}`;
-
-const DETECTION_PROMPT = `Vous êtes un détecteur de contenu historique et politique.
-Répondez uniquement avec {"isHistoricalOrPolitical": true} si le message contient :
-- Des affirmations sur l'histoire
-- Des personnages historiques
-- Des politiciens ou personnalités politiques
-- Des événements politiques actuels
-- Des figures publiques influentes
-
-Sinon, répondez avec {"isHistoricalOrPolitical": false}.`;
+const SYSTEM_PROMPT = Config.factCheckPrompts.system;
+const DETECTION_PROMPT = Config.factCheckPrompts.detection;
 
 export const data = new SlashCommandSubcommandBuilder()
     .setName('factcheckerus')
@@ -162,6 +152,12 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     }
 }
 
+function countSignificantWords(message: string): number {
+    const words = message.toLowerCase().trim().split(/\s+/);
+    const excludedWords = Config.factchecker.excludeFromWordCount;
+    return words.filter(word => !excludedWords.includes(word as any)).length;
+}
+
 export async function checkMessage(message: any): Promise<void> {
     if (!message.guild || message.author.bot) return;
 
@@ -173,8 +169,10 @@ export async function checkMessage(message: any): Promise<void> {
     
     if (!isFactChecked) return;
 
-    if (message.content.length === 0 || message.content.length > 2000) {
-        console.error('Invalid message length for OpenAI processing.');
+    if (message.content.length === 0 || 
+        message.content.length > Config.factchecker.maxMessageLength || 
+        countSignificantWords(message.content) < Config.factchecker.minWords) {
+        console.log('[FactCheck] Message skipped: too short or too long');
         return;
     }
 
