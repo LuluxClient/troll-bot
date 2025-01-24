@@ -29,7 +29,15 @@ Analysez le message et répondez selon ce format :
 2. Si l'information est fausse : {"factCheck": "FAUX", "reason": "explication concise", "source": "source vérifiable", "url": "lien vers la source"}
 3. Si non vérifiable : {"factCheck": "NON VERIFIABLE", "reason": "explication brève"}`;
 
-// const DETECTION_PROMPT = `{"isHistoricalOrPolitical": true} pour des messages sur l'histoire, la politique, ou des personnalités publiques. Sinon, {"isHistoricalOrPolitical": false}.`;
+const DETECTION_PROMPT = `Vous êtes un détecteur de contenu historique et politique.
+Répondez uniquement avec {"isHistoricalOrPolitical": true} si le message contient :
+- Des affirmations sur l'histoire
+- Des personnages historiques
+- Des politiciens ou personnalités politiques
+- Des événements politiques actuels
+- Des figures publiques influentes
+
+Sinon, répondez avec {"isHistoricalOrPolitical": false}.`;
 
 export const data = new SlashCommandSubcommandBuilder()
     .setName('factcheckerus')
@@ -175,6 +183,31 @@ export async function checkMessage(message: any): Promise<void> {
         if (cachedResult !== undefined) {
             if (!cachedResult) return;
         } else {
+      
+            const detectionCompletion = await openai.createChatCompletion({
+                model: "gpt-4o-mini",
+                messages: [
+                    { role: "system", content: DETECTION_PROMPT },
+                    { role: "user", content: message.content }
+                ],
+                temperature: 0.1,
+                max_tokens: 20
+            });
+
+            const detectionResponse = detectionCompletion.data.choices[0]?.message?.content;
+            console.log(`[FactCheck] Detection response: ${detectionResponse}`);
+            
+            try {
+                const detectionJson = JSON.parse(detectionResponse || "{}");
+                if (!detectionJson.isHistoricalOrPolitical) {
+                    messageCache.set(message.content, false);
+                    return;
+                }
+            } catch (parseError) {
+                console.error('Error parsing detection response:', parseError);
+                return;
+            }
+
             const completion = await openai.createChatCompletion({
                 model: "gpt-4o-mini",
                 messages: [
