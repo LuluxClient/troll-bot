@@ -84,11 +84,17 @@ export async function execute(interaction: MessageContextMenuCommandInteraction)
 
             const embed = new EmbedBuilder()
                 .setColor(getStatusColor(jsonResponse.factCheck))
-                .setTitle(`${getStatusEmoji(jsonResponse.factCheck)} Fact-check : ${jsonResponse.factCheck}`)
-                .setDescription(jsonResponse.reason)
-                .addFields(
-                    { name: '📚 Source', value: jsonResponse.source || 'Non spécifiée', inline: false }
-                );
+                .setTitle(`${getStatusEmoji(jsonResponse.factCheck)} Fact-check : ${jsonResponse.factCheck}`);
+
+            if (jsonResponse.factCheck === "CORRECT") {
+                embed.setDescription("Cette affirmation est correcte.");
+            } else if (jsonResponse.reason) {
+                embed.setDescription(jsonResponse.reason);
+            }
+
+            if (jsonResponse.source) {
+                embed.addFields({ name: '📚 Source', value: jsonResponse.source, inline: false });
+            }
 
             if (jsonResponse.url) {
                 embed.addFields({ name: '🔗 Lien', value: jsonResponse.url, inline: false });
