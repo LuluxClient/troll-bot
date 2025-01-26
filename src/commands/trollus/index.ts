@@ -12,6 +12,7 @@ import * as retard from './retard';
 import * as blacklist from './blacklist';
 import * as nick from './nick';
 import * as factchecker from './factchecker';
+import * as recopitus from './recopitus';
 
 export const trollus = {
     data: new SlashCommandBuilder()
@@ -29,7 +30,8 @@ export const trollus = {
         .addSubcommand(retard.data)
         .addSubcommand(blacklist.data)
         .addSubcommand(nick.data)
-        .addSubcommand(factchecker.data),
+        .addSubcommand(factchecker.data)
+        .addSubcommand(recopitus.data),
 
     async execute(interaction: ChatInputCommandInteraction) {
         const subcommand = interaction.options.getSubcommand();
@@ -61,6 +63,8 @@ export const trollus = {
                 return nick.execute(interaction);
             case 'factcheckerus':
                 return factchecker.execute(interaction);
+            case 'recopitus':
+                return recopitus.execute(interaction);
         }
     },
 
