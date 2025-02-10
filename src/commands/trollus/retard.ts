@@ -102,7 +102,7 @@ async function checkUserStatus(
             `${targetUser} CONNECTE TOI !!!`,
             `${targetUser} ???????????`,
             `${targetUser} ALLOOOOOO`,
-            `${targetUser} CEST VALO / CS2 TIME FILS DE PUTE !!!`
+            `${targetUser} CEST CS2 TIME FILS DE PUTE !!!`
         ];
 
         const randomMessage = messages[Math.floor(Math.random() * messages.length)];
