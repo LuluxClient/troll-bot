@@ -64,7 +64,8 @@ export const Config = {
             "l'oreillé de vendettaQQ",
             "je suis tout nu",
             "je vends mes pieds (DM me)",
-            "Apple > ALL"
+            "Apple > ALL",
+            "SAAALAM ALEYKUM"
         ] as const,
     },
     unban: {
