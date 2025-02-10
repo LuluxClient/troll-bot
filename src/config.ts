@@ -54,21 +54,17 @@ export const Config = {
         maxDuration: 43200, // Temps en minutes (30 jours)
         minDuration: 1, // Temps en minutes (1 minute)
         nicknames: [
-            "Patate Dansante",
-            "Carotte Volante",
-            "Banane Cosmique",
-            "Tomate Ninja",
-            "Poireau Magique",
-            "Brocoli Rockstar",
-            "Aubergine Jedi",
-            "Courgette Pirate",
-            "Potiron Chevalier",
-            "Navet Sorcier",
-            "Radis Samouraï",
-            "Champignon Cowboy",
-            "Citrouille Viking",
-            "Artichaut Astronaute",
-            "Concombre Vampire"
+            "Vaseline",
+            "dit gros nez 10 fois",
+            "la dernière latte de NoHere",
+            "Arabe",
+            "blacklover3000",
+            "jesuisraciste",
+            "FEUUUJ EN VUE !",
+            "l'oreillé de vendettaQQ",
+            "je suis tout nu",
+            "je vends mes pieds (DM me)",
+            "Apple > ALL"
         ] as const,
     },
     unban: {
