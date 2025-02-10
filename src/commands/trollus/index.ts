@@ -13,6 +13,7 @@ import * as blacklist from './blacklist';
 import * as nick from './nick';
 import * as factchecker from './factchecker';
 import * as recopitus from './recopitus';
+import * as randomusNickus from './randomus-nickus';
 
 export const trollus = {
     data: new SlashCommandBuilder()
@@ -31,7 +32,8 @@ export const trollus = {
         .addSubcommand(blacklist.data)
         .addSubcommand(nick.data)
         .addSubcommand(factchecker.data)
-        .addSubcommand(recopitus.data),
+        .addSubcommand(recopitus.data)
+        .addSubcommand(randomusNickus.data),
 
     async execute(interaction: ChatInputCommandInteraction) {
         const subcommand = interaction.options.getSubcommand();
@@ -65,6 +67,8 @@ export const trollus = {
                 return factchecker.execute(interaction);
             case 'recopitus':
                 return recopitus.execute(interaction);
+            case 'randomus-nickus':
+                return randomusNickus.execute(interaction);
         }
     },
 

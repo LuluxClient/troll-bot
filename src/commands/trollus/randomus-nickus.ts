@@ -5,7 +5,6 @@ import {
     MessageFlags,
     Events,
     PartialGuildMember,
-    ChannelType
 } from 'discord.js';
 import { JsonDatabase } from '../../database/JsonDatabase';
 import { isUserAllowed } from '../../utils/permissions';
@@ -13,18 +12,12 @@ import { Config } from '../../config';
 import { parseDuration, formatDuration } from '../../utils/duration';
 
 export const data = new SlashCommandSubcommandBuilder()
-    .setName('nickus')
-    .setDescription('Force un surnom à un utilisateur pendant une durée donnée')
+    .setName('randomus-nickus')
+    .setDescription('Force un surnom aléatoire à un utilisateur pendant une durée donnée')
     .addUserOption(option =>
         option.setName('user')
-            .setDescription('L\'utilisateur à renommer')
+            .setDescription('L\'utilisateur à renommer aléatoirement')
             .setRequired(true)
-    )
-    .addStringOption(option =>
-        option.setName('nickname')
-            .setDescription('Le nouveau surnom')
-            .setRequired(true)
-            .setMaxLength(32)
     )
     .addStringOption(option =>
         option.setName('duration')
@@ -57,6 +50,17 @@ async function restoreNickname(member: GuildMember, originalNickname: string | n
             console.error('Erreur lors de la restauration du surnom:', error);
         }
     }
+}
+
+function getRandomNickname(currentNickname: string | null): string {
+    const nicknames = Config.randomusNickus.nicknames;
+    let availableNicknames = [...nicknames];
+    if (currentNickname) {
+        availableNicknames = availableNicknames.filter(nick => nick !== currentNickname);
+    }
+    
+    const randomIndex = Math.floor(Math.random() * availableNicknames.length);
+    return availableNicknames[randomIndex];
 }
 
 export async function execute(interaction: ChatInputCommandInteraction) {
@@ -93,25 +97,10 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     }
 
     if (targetUser.roles.highest.position >= bot.roles.highest.position) {
-        await interaction.editReply('Le bot ne peut pas modifier le surnom de cet utilisateur car son rôle n\'est pas inférieur à celui du bot. Le rôle du bot doit être plus haut dans la hiérarchie des rôles.');
-        return;
-    }
-    const guild = interaction.guild;
-    if (!guild) {
-        await interaction.editReply('Impossible de récupérer les informations du serveur.');
+        await interaction.editReply('Le bot ne peut pas modifier le surnom de cet utilisateur car son rôle n\'est pas inférieur à celui du bot.');
         return;
     }
 
-    const guildMe = guild.members.me;
-    if (!guildMe) {
-        await interaction.editReply('Impossible de récupérer les informations du bot dans le serveur.');
-        return;
-    }
-
-    if (interaction.channel?.type === ChannelType.GuildText) {
-        const channelPerms = guildMe.permissionsIn(interaction.channel);
-        console.log('Permissions du bot dans le canal:', channelPerms.toArray());
-    }
     const db = await JsonDatabase.getInstance();
 
     const shouldStop = interaction.options.getBoolean('stop') ?? false;
@@ -128,7 +117,6 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         }
 
         const originalNickname = await db.removeForcedNickname(interaction.guildId, targetUser.id);
-
         await restoreNickname(targetUser, originalNickname);
         await interaction.editReply(`Le surnom forcé de ${targetUser.user.username} a été supprimé.`);
         return;
@@ -143,9 +131,8 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         return;
     }
 
-    const nickname = interaction.options.getString('nickname', true);
     const durationStr = interaction.options.getString('duration', true);
-    const durationResult = parseDuration(durationStr, Config.nickus.minDuration, Config.nickus.maxDuration);
+    const durationResult = parseDuration(durationStr, Config.randomusNickus.minDuration, Config.randomusNickus.maxDuration);
     
     if (!durationResult.success) {
         await interaction.editReply(durationResult.error!);
@@ -153,14 +140,15 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     }
 
     const duration = durationResult.minutes!;
+    const randomNickname = getRandomNickname(targetUser.nickname);
 
     try {
         const originalNickname = targetUser.nickname || '';
-        await db.addForcedNickname(interaction.guildId, targetUser.id, nickname, originalNickname, duration, interaction.user.id);
-        await targetUser.setNickname(nickname, `Surnom forcé par ${interaction.user.tag}`);
+        await db.addForcedNickname(interaction.guildId, targetUser.id, randomNickname, originalNickname, duration, interaction.user.id);
+        await targetUser.setNickname(randomNickname, `Surnom aléatoire forcé par ${interaction.user.tag}`);
         
         await interaction.editReply(
-            `Le surnom de ${targetUser.user.username} a été changé en "${nickname}" pour ${formatDuration(duration)}.`
+            `Le surnom de ${targetUser.user.username} a été changé en "${randomNickname}" pour ${formatDuration(duration)}.`
         );
 
         setTimeout(async () => {
@@ -191,7 +179,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         console.error('Erreur lors du changement de surnom:', error);
         await interaction.editReply('Une erreur est survenue lors du changement de surnom.');
     }
-} 
+}
 
 export const events = [
     {

@@ -6,6 +6,7 @@ import * as messageCreate from './events/messageCreate';
 import * as guildMemberAdd from './events/guildMemberAdd';
 import * as guildBanAdd from './events/guildBanAdd';
 import { contextMenuCommands } from './applications';
+import { NicknameRotationService } from './services/NicknameRotationService';
 
 config();
 
@@ -23,6 +24,7 @@ const client = new Client({
 
 client.once(Events.ClientReady, () => {
     console.log('Bot is ready!');
+    NicknameRotationService.getInstance(client);
 });
 
 client.on(Events.GuildMemberUpdate, (...args) => guildMemberUpdate.events[0].execute(...args));

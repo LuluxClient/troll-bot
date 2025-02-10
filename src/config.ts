@@ -50,6 +50,27 @@ export const Config = {
         maxDuration: 10080, // Temps en minutes (7 jours)
         minDuration: 1, // Temps en minutes (1 minute)  
     },
+    randomusNickus: {
+        maxDuration: 43200, // Temps en minutes (30 jours)
+        minDuration: 1, // Temps en minutes (1 minute)
+        nicknames: [
+            "Patate Dansante",
+            "Carotte Volante",
+            "Banane Cosmique",
+            "Tomate Ninja",
+            "Poireau Magique",
+            "Brocoli Rockstar",
+            "Aubergine Jedi",
+            "Courgette Pirate",
+            "Potiron Chevalier",
+            "Navet Sorcier",
+            "Radis Samouraï",
+            "Champignon Cowboy",
+            "Citrouille Viking",
+            "Artichaut Astronaute",
+            "Concombre Vampire"
+        ] as const,
+    },
     unban: {
         userId: '384384703710494721', // L'ID de l'utilisateur qui peut se débannir
         cooldown: 30 * 60 * 1000, // 30 minutes en millisecondes

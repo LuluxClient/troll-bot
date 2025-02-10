@@ -258,6 +258,15 @@ export class JsonDatabase {
         return this.data.servers[guildId].forcedNicknames;
     }
 
+    public async updateForcedNickname(guildId: string, userId: string, newNickname: string): Promise<void> {
+        this.initServerData(guildId);
+        const forcedNick = this.data.servers[guildId].forcedNicknames.find(n => n.userId === userId);
+        if (forcedNick) {
+            forcedNick.nickname = newNickname;
+            await this.save();
+        }
+    }
+
     public async cleanExpiredNicknames(guildId: string): Promise<ForcedNickname[]> {
         this.initServerData(guildId);
         const now = Date.now();
