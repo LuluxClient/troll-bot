@@ -65,7 +65,11 @@ export const Config = {
             "je suis tout nu",
             "je vends mes pieds (DM me)",
             "Apple > ALL",
-            "SAAALAM ALEYKUM"
+            "SAAALAM ALEYKUM",
+            "vive LFI ! <3",
+            "j'aime la bite",
+            "uwu",
+            "I need dik in mi pls <3"
         ] as const,
     },
     unban: {
